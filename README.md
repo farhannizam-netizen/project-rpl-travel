@@ -1,152 +1,204 @@
-# project-rpl-travel
-Proyek Rekayasa Perangkat Lunak berupa pengembangan website profil dan informasi layanan travel Umroh &amp; Haji Kurma Travel.
+# 🕋 RPL - Kurma Travel
 
-# Website Travel Umroh & Haji
+## 🌐 Website Informasi dan Layanan Travel Umroh & Haji
 
-## 📌 Tentang Proyek
+Proyek ini merupakan tugas mata kuliah Rekayasa Perangkat Lunak berupa pengembangan website untuk Kurma Travel, sebuah perusahaan yang bergerak di bidang perjalanan Umroh dan Haji.
 
-Proyek ini merupakan tugas mata kuliah **Rekayasa Perangkat Lunak** yang berfokus pada perancangan dan pengembangan sebuah website untuk perusahaan travel yang bergerak di bidang **pelayanan perjalanan Umroh dan Haji**.
-
-Website ini dibuat berdasarkan kebutuhan nyata dari perusahaan travel milik keluarga saya. Tujuan utama dari proyek ini adalah membantu perusahaan memiliki **website yang lebih proper, informatif, modern, dan mudah digunakan** sehingga dapat menjadi media informasi resmi bagi calon jamaah.
-
-Selain digunakan sebagai tugas perkuliahan, proyek ini diharapkan dapat menghasilkan sebuah website yang nantinya memiliki manfaat dan dapat dikembangkan lebih lanjut sesuai dengan kebutuhan perusahaan.
+Website ini dibuat berdasarkan kebutuhan nyata perusahaan. Tujuan utamanya adalah membantu Kurma Travel memiliki media digital yang lebih proper untuk memperkenalkan perusahaan, memberikan informasi kepada calon jamaah, dan memudahkan calon jamaah dalam menghubungi pihak travel.
 
 ---
 
-## 🎯 Latar Belakang
+## 🎯 1. Deskripsi Masalah
 
-Di era digital, website dapat menjadi salah satu media penting bagi sebuah perusahaan untuk memperkenalkan layanan dan memberikan informasi kepada masyarakat.
+Informasi mengenai perusahaan, paket Umroh dan Haji, fasilitas, dokumentasi, dan kontak masih perlu disajikan dalam satu media yang lebih terstruktur.
 
-Perusahaan travel Umroh dan Haji membutuhkan media yang dapat menyampaikan informasi seperti **profil perusahaan, paket perjalanan, fasilitas, dokumentasi kegiatan, informasi kontak, serta artikel atau informasi seputar Umroh dan Haji**.
+Calon jamaah yang ingin mencari informasi mengenai layanan travel juga membutuhkan media yang mudah diakses dan dapat memberikan gambaran mengenai perusahaan sebelum menghubungi pihak travel.
 
-Berdasarkan kebutuhan tersebut, proyek ini dibuat untuk merancang dan mengembangkan website travel Umroh dan Haji yang dapat menjadi media informasi resmi perusahaan sekaligus meningkatkan kemudahan calon jamaah dalam memperoleh informasi.
-
----
-
-## ❗ Permasalahan
-
-Beberapa permasalahan yang ingin dibantu melalui proyek ini antara lain:
-
-* Belum adanya website perusahaan yang dapat menjadi pusat informasi resmi.
-* Informasi mengenai paket Umroh dan Haji belum tersaji dalam satu platform yang terstruktur.
-* Calon jamaah membutuhkan akses informasi yang mudah melalui perangkat seperti smartphone maupun komputer.
-* Dokumentasi kegiatan perusahaan perlu ditampilkan secara lebih terorganisir.
-* Perusahaan membutuhkan media digital yang dapat membantu membangun identitas dan keberadaan perusahaan di internet.
+Karena itu, proyek ini berfokus pada pembuatan website Kurma Travel sebagai media informasi dan pengenalan layanan kepada calon jamaah.
 
 ---
 
-## 💡 Solusi yang Ditawarkan
+## 👥 2. Profil Target Pengguna
 
-Solusi yang ditawarkan adalah membangun sebuah **website company profile untuk travel Umroh dan Haji** yang menyediakan informasi perusahaan dan layanan secara terstruktur.
+### 🙋 Calon Jamaah
 
-Website dirancang dengan tampilan yang modern, sederhana, responsif, dan mudah digunakan oleh calon jamaah.
+Orang yang sedang mencari informasi mengenai perjalanan Umroh atau Haji dan ingin mengetahui layanan yang ditawarkan oleh Kurma Travel.
 
-Beberapa fitur yang direncanakan meliputi:
+Melalui website, calon jamaah dapat:
 
-* 🏠 **Home** — halaman utama yang memberikan gambaran umum perusahaan.
-* 🏢 **Profil Perusahaan** — informasi mengenai perusahaan travel.
-* 🕋 **Paket Umroh & Haji** — informasi paket perjalanan yang tersedia.
-* 📸 **Galeri** — dokumentasi kegiatan dan perjalanan jamaah.
-* 📰 **Artikel** — informasi, tips, dan edukasi seputar Umroh dan Haji.
-* 👥 **Informasi Tim/Staf** — memperkenalkan orang-orang yang terlibat dalam pelayanan.
-* 📞 **Kontak** — informasi yang dapat digunakan calon jamaah untuk menghubungi perusahaan.
-* 💬 **WhatsApp** — akses komunikasi langsung dengan pihak perusahaan.
+* Melihat profil perusahaan
+* Melihat paket Umroh dan Haji
+* Mengetahui fasilitas yang diberikan
+* Melihat dokumentasi kegiatan
+* Membaca artikel seputar Umroh dan Haji
+* Melihat alamat dan kontak perusahaan
+* Menghubungi pihak travel melalui WhatsApp
 
----
+### 🏢 Pihak Perusahaan
 
-## 🎯 Tujuan Proyek
-
-Tujuan dari pengembangan proyek ini adalah:
-
-1. Membuat website resmi yang dapat menjadi pusat informasi perusahaan.
-2. Memudahkan calon jamaah dalam memperoleh informasi mengenai layanan dan paket Umroh & Haji.
-3. Meningkatkan kehadiran perusahaan di dunia digital.
-4. Menyajikan informasi perusahaan secara lebih terstruktur dan mudah dipahami.
-5. Menerapkan konsep dan tahapan **Rekayasa Perangkat Lunak** dalam pengembangan sebuah perangkat lunak berdasarkan kebutuhan pengguna.
-6. Menghasilkan sistem yang dapat dikembangkan lebih lanjut sesuai dengan kebutuhan perusahaan.
+Kurma Travel sebagai pemilik website yang menggunakan website sebagai media untuk memperkenalkan perusahaan dan layanan yang tersedia kepada masyarakat.
 
 ---
 
-## 👤 Target Pengguna
+## 💡 3. Manfaat Aplikasi
 
-Website ini ditujukan untuk beberapa pengguna, yaitu:
+Website ini diharapkan dapat:
 
-### Calon Jamaah
-
-Dapat melihat informasi mengenai perusahaan, paket perjalanan, fasilitas, galeri, artikel, serta informasi kontak.
-
-### Jamaah
-
-Dapat memperoleh informasi dan dokumentasi yang berkaitan dengan kegiatan perjalanan Umroh dan Haji.
-
-### Perusahaan
-
-Dapat menggunakan website sebagai media informasi dan representasi digital perusahaan.
+* Membantu Kurma Travel memiliki media informasi digital yang lebih terstruktur
+* Memudahkan calon jamaah mendapatkan informasi mengenai paket dan layanan
+* Memperkenalkan profil serta layanan perusahaan kepada masyarakat
+* Menampilkan dokumentasi kegiatan dalam satu tempat
+* Memudahkan calon jamaah untuk menghubungi pihak travel
 
 ---
 
-## 🛠️ Teknologi yang Digunakan
+## ⚙️ 4. Daftar Fitur Inti
 
-Teknologi yang akan digunakan dalam pengembangan proyek ini antara lain:
+Fitur yang dibuat akan disesuaikan dengan waktu pengerjaan selama 12 pertemuan.
 
-* **HTML** — struktur halaman website
-* **CSS** — tampilan dan desain website
-* **JavaScript** — interaksi dan fungsionalitas website
-* **Git & GitHub** — version control dan repository proyek
+### 🏠 Beranda
 
-Teknologi tambahan dapat digunakan sesuai kebutuhan selama proses pengembangan.
+Menampilkan informasi utama mengenai Kurma Travel dan gambaran singkat mengenai layanan yang tersedia.
 
----
+### 🏢 Profil Perusahaan
 
-## 📋 Ruang Lingkup
+Menampilkan informasi mengenai perusahaan, visi, misi, dan informasi pendukung lainnya.
 
-Pada tahap awal, proyek berfokus pada pengembangan website yang menyediakan informasi dan layanan dasar perusahaan.
+### 🕋 Paket Umroh & Haji
 
-Ruang lingkup proyek meliputi:
+Menampilkan paket yang tersedia beserta informasi seperti:
 
-* Perancangan kebutuhan sistem.
-* Perancangan UI/UX website.
-* Pengembangan halaman website.
-* Penyajian informasi perusahaan.
-* Penyajian paket Umroh dan Haji.
-* Galeri dokumentasi.
-* Artikel dan informasi edukasi.
-* Informasi kontak dan komunikasi dengan perusahaan.
-* Pengujian website.
-* Dokumentasi proses pengembangan.
+* Nama paket
+* Harga
+* Durasi
+* Hotel
+* Fasilitas
+* Informasi keberangkatan
 
-Fitur seperti sistem pembayaran online, manajemen jamaah, dashboard admin, database jamaah, dan integrasi sistem internal perusahaan dapat dipertimbangkan sebagai pengembangan tahap berikutnya.
+### 📋 Detail Paket
 
----
+Menampilkan informasi paket secara lebih lengkap agar calon jamaah dapat memahami layanan yang ditawarkan.
 
-## 📈 Pengembangan Selanjutnya
+### 📸 Galeri
 
-Website ini dirancang agar dapat dikembangkan menjadi sistem yang lebih kompleks apabila dibutuhkan oleh perusahaan.
+Menampilkan dokumentasi foto kegiatan dan perjalanan jamaah.
 
-Beberapa pengembangan yang dapat dilakukan di masa mendatang antara lain:
+### 📰 Artikel
 
-* Dashboard admin untuk mengelola konten website.
-* Sistem manajemen paket Umroh dan Haji.
-* Sistem pendaftaran jamaah.
-* Database data jamaah.
-* Sistem pembayaran atau integrasi payment gateway.
-* Status dan informasi keberangkatan jamaah.
-* Sistem pengelolaan artikel dan galeri.
-* Notifikasi kepada calon jamaah atau jamaah.
-* Integrasi dengan layanan WhatsApp.
+Menampilkan informasi dan artikel seputar Umroh dan Haji, seperti tips persiapan dan informasi perjalanan.
+
+### 📞 Kontak
+
+Menampilkan informasi alamat, nomor WhatsApp, dan media sosial perusahaan.
+
+### 💬 WhatsApp
+
+Tombol yang memungkinkan calon jamaah langsung menghubungi pihak Kurma Travel melalui WhatsApp.
+
+### 📱 Responsive Design
+
+Website dapat digunakan dengan nyaman melalui komputer, tablet, maupun smartphone.
 
 ---
 
-## 🎓 Mata Kuliah
+## 🚫 5. Fitur yang Tidak Dikerjakan
 
-**Mata Kuliah:** Rekayasa Perangkat Lunak
-**Jenis Proyek:** Pengembangan Website
-**Platform:** Web
-**Repository:** GitHub
+Agar proyek tetap realistis untuk diselesaikan dalam 12 pertemuan, fitur berikut tidak termasuk dalam tahap pengerjaan:
+
+* ❌ Sistem pendaftaran jamaah online
+* ❌ Login dan registrasi pengguna
+* ❌ Dashboard admin
+* ❌ Manajemen database jamaah
+* ❌ Sistem pembayaran online
+* ❌ Payment gateway
+* ❌ Sistem booking otomatis
+* ❌ Sistem pengelolaan keberangkatan jamaah
+* ❌ Notifikasi otomatis
+* ❌ Integrasi dengan sistem internal perusahaan
+* ❌ Aplikasi mobile Android/iOS
+
+Fitur tersebut dapat dipertimbangkan sebagai pengembangan pada tahap berikutnya.
 
 ---
 
-## 👨‍💻 Developer
+## 📌 6. Batasan Proyek
+
+Proyek ini hanya berfokus pada website informasi dan layanan dasar Kurma Travel.
+
+Prioritas pengerjaan adalah menyelesaikan fitur inti yang telah ditentukan dan memastikan fitur tersebut dapat digunakan dengan baik oleh calon jamaah.
+
+Fitur tambahan dapat dipertimbangkan selama proses pengembangan, tetapi tidak boleh mengganggu penyelesaian fitur utama dalam batas waktu yang telah ditentukan.
+
+---
+
+## ✅ 7. Kriteria Aplikasi Dinyatakan Berhasil
+
+Aplikasi dinyatakan berhasil apabila:
+
+* ✅ Website dapat dibuka dan digunakan dengan baik
+* ✅ Informasi perusahaan dapat ditampilkan dengan jelas
+* ✅ Paket Umroh dan Haji dapat dilihat oleh pengunjung
+* ✅ Detail paket dapat diakses
+* ✅ Galeri dapat menampilkan dokumentasi dengan baik
+* ✅ Artikel dapat diakses
+* ✅ Informasi kontak mudah ditemukan
+* ✅ Tombol WhatsApp dapat digunakan
+* ✅ Website dapat digunakan melalui komputer dan smartphone
+* ✅ Navigasi antarhalaman berjalan dengan baik
+* ✅ Tidak terdapat error pada fitur utama
+* ✅ Seluruh fitur inti dapat diselesaikan dalam 12 pertemuan
+
+---
+
+## 🗓️ 8. Rencana Pengerjaan
+
+Proyek direncanakan untuk dikerjakan selama 12 pertemuan.
+
+| Pertemuan | Kegiatan                                   |
+| --------- | ------------------------------------------ |
+| 1         | Menentukan masalah dan target pengguna     |
+| 2         | Analisis kebutuhan sistem                  |
+| 3         | Perancangan sistem                         |
+| 4         | Perancangan UI/UX                          |
+| 5         | Pembuatan struktur website                 |
+| 6         | Pengembangan halaman utama                 |
+| 7         | Pengembangan paket Umroh & Haji            |
+| 8         | Pengembangan galeri dan artikel            |
+| 9         | Pengembangan kontak dan integrasi WhatsApp |
+| 10        | Pengujian fitur                            |
+| 11        | Perbaikan dan penyempurnaan                |
+| 12        | Finalisasi dan dokumentasi                 |
+
+---
+
+## 🛠️ 9. Teknologi
+
+Teknologi yang direncanakan digunakan:
+
+* HTML
+* CSS
+* JavaScript
+* Git
+* GitHub
+
+Teknologi tambahan dapat digunakan apabila diperlukan selama proses pengembangan.
+
+---
+
+## 📚 10. Identitas Proyek
+
+| Keterangan  | Detail                                    |
+| ----------- | ----------------------------------------- |
+| Mata Kuliah | Rekayasa Perangkat Lunak                  |
+| Proyek      | Website Kurma Travel                      |
+| Tema        | Informasi dan Layanan Travel Umroh & Haji |
+| Platform    | Website                                   |
+| Durasi      | 12 Pertemuan                              |
+| Repository  | GitHub                                    |
+
+---
+
+## 👨‍💻 11. Developer
 
 **Farhan Nizam Sya'ban Al Banta**
 Program Studi Informatika
@@ -155,4 +207,4 @@ Angkatan 2025
 
 ---
 
-> Proyek ini dikembangkan sebagai bagian dari tugas mata kuliah **Rekayasa Perangkat Lunak** dan sekaligus sebagai upaya untuk mengembangkan solusi digital yang dapat memberikan manfaat bagi perusahaan travel Umroh dan Haji.
+> 🚀 Proyek ini dikembangkan sebagai bagian dari tugas mata kuliah Rekayasa Perangkat Lunak dan ditujukan untuk menghasilkan website yang dapat memberikan manfaat nyata bagi Kurma Travel.
