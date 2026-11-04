@@ -13,7 +13,10 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 from flask import Flask, jsonify, request, send_from_directory, session
 
-load_dotenv()
+load_dotenv(
+    dotenv_path=Path(__file__).resolve().with_name(".env"),
+    override=os.environ.get("RENDER") is None,
+)
 
 
 def normalize_content_url(value, fallback_title):
@@ -36,7 +39,16 @@ UPLOAD_DIR = SITE_DIR / "static" / "uploads"
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
 SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
 SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "").strip()
-USE_SUPABASE = bool(SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY)
+USE_SUPABASE_SETTING = os.environ.get("USE_SUPABASE")
+USE_SUPABASE = (
+    bool(SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY)
+    if USE_SUPABASE_SETTING is None
+    else USE_SUPABASE_SETTING.strip().lower() in {"1", "true", "yes"}
+)
+if USE_SUPABASE and not (SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY):
+    raise RuntimeError(
+        "USE_SUPABASE aktif, tetapi SUPABASE_URL atau SUPABASE_SERVICE_ROLE_KEY belum diatur."
+    )
 if os.environ.get("RENDER") and not (
     SUPABASE_URL and SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY
 ):
@@ -340,7 +352,11 @@ def admin_session():
 
 @app.get("/api/content")
 def public_content():
-    return jsonify(load_content())
+    try:
+        return jsonify(load_content())
+    except Exception:
+        app.logger.exception("Gagal memuat konten dari database")
+        return jsonify({"error": "Konten gagal dimuat. Periksa log backend."}), 500
 
 
 @app.put("/api/admin/theme")
@@ -353,13 +369,25 @@ def update_theme():
     theme = {key: str(payload[key]).strip() for key in allowed_fields if payload.get(key)}
     if not theme:
         return jsonify({"error": "Data tema tidak valid"}), 400
-    content = load_content()
-    current_theme = content.get("theme", DEFAULT_THEME.copy())
-    current_theme.update(theme)
-    if USE_SUPABASE:
-        saved_theme = supabase_database.save_theme(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, current_theme, DEFAULT_THEME)
-    else:
-        saved_theme = database.save_theme(DB_FILE, current_theme, DEFAULT_THEME)
+    try:
+        content = load_content()
+        current_theme = content.get("theme", DEFAULT_THEME.copy())
+        current_theme.update(theme)
+        if USE_SUPABASE:
+            saved_theme = supabase_database.save_theme(
+                SUPABASE_URL,
+                SUPABASE_SERVICE_ROLE_KEY,
+                current_theme,
+                DEFAULT_THEME,
+            )
+        else:
+            saved_theme = database.save_theme(DB_FILE, current_theme, DEFAULT_THEME)
+    except Exception as exc:
+        app.logger.exception("Gagal menyimpan tema situs")
+        return jsonify({
+            "error": "Warna gagal disimpan. Periksa log backend untuk detail.",
+            "detail": str(exc),
+        }), 500
     return jsonify(saved_theme)
 
 

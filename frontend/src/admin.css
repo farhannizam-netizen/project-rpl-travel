@@ -510,6 +510,20 @@
   padding: 9px !important;
 }
 
+.admin-staff-photo-field {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-staff-photo-preview {
+  width: 112px;
+  height: 112px;
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  object-fit: cover;
+  background: var(--admin-bg);
+}
+
 .admin-editor-actions {
   display: flex;
   justify-content: flex-end;
@@ -885,5 +899,23 @@
   }
   .admin-item-actions {
     grid-column: 1 / -1;
+  }
+}
+/* Keep legacy templates hidden until CMS content has replaced their placeholders. */
+.legacy-page.cms-hydrating {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 240ms ease;
+}
+
+.legacy-page.cms-ready {
+  opacity: 1;
+  transition: opacity 240ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .legacy-page.cms-hydrating,
+  .legacy-page.cms-ready {
+    transition: none;
   }
 }

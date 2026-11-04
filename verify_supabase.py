@@ -1,11 +1,15 @@
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 
-from supabase_database import client
+from supabase_database import client, load_content
 
 
-load_dotenv()
+load_dotenv(
+    dotenv_path=Path(__file__).resolve().with_name(".env"),
+    override=os.environ.get("RENDER") is None,
+)
 
 
 def main():
@@ -26,13 +30,19 @@ def main():
         supabase.table("content_items")
         .select("id")
         .eq("section", "gallery")
-        .not_("deleted_at", "is", "null")
+        .not_.is_("deleted_at", "null")
         .execute()
     )
+    theme = supabase.table("site_theme").select("key").limit(1).execute()
+    content = load_content(url, key, {})
 
     rows = active.data or []
     visible = sum(1 for row in rows if not row["hidden"])
     hidden = sum(1 for row in rows if row["hidden"])
+    print("Koneksi dan API key Supabase: OK")
+    print(f"Akses tabel site_theme: OK ({len(theme.data or [])} warna)")
+    for section in ("packages", "gallery", "articles", "information", "staff", "contacts"):
+        print(f"{section}: {len(content.get(section, []))}")
     print(f"Galeri aktif: {len(rows)}")
     print(f"Galeri terlihat publik: {visible}")
     print(f"Galeri tersembunyi: {hidden}")

@@ -138,10 +138,9 @@ def save_theme(supabase_url, service_role_key, theme, default_theme):
     supabase = client(supabase_url, service_role_key)
     merged = default_theme.copy()
     merged.update(theme)
-    supabase.table("site_theme").delete().neq("key", "").execute()
-    supabase.table("site_theme").insert([
+    supabase.table("site_theme").upsert([
         {"key": key, "value": str(value)} for key, value in merged.items()
-    ]).execute()
+    ], on_conflict="key").execute()
     return merged
 
 
@@ -246,7 +245,7 @@ def restore_gallery_item(supabase_url, service_role_key, item_id):
         .select("payload,hidden")
         .eq("section", "gallery")
         .eq("id", item_id)
-        .not_("deleted_at", "is", "null")
+        .not_.is_("deleted_at", "null")
         .limit(1)
         .execute()
     )
@@ -281,7 +280,7 @@ def permanently_delete_gallery_item(supabase_url, service_role_key, item_id):
         .delete()
         .eq("section", "gallery")
         .eq("id", item_id)
-        .not_("deleted_at", "is", "null")
+        .not_.is_("deleted_at", "null")
         .execute()
     )
     return bool(response.data)

@@ -36,6 +36,7 @@ function LegacyPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const [html, setHtml] = useState("");
+  const [isHydrating, setIsHydrating] = useState(true);
   const [pageStyles, setPageStyles] = useState([]);
   const [error, setError] = useState("");
 
@@ -43,6 +44,7 @@ function LegacyPage() {
     const pathName = location.pathname.replace(/\/+$/, "") || "/";
     const page = pageMap[pathName] || `${pathName.replace(/^\/+/, "") || "index"}.html`;
     setError("");
+    setIsHydrating(true);
     setHtml("");
 
     fetch(`/api/page/${encodeURIComponent(page)}`)
@@ -98,10 +100,15 @@ function LegacyPage() {
             const templateDocument = new DOMParser().parseFromString(templateData.html, "text/html");
             const templateHeroTitle = templateDocument.querySelector(".hero h1");
             const templateContent = templateDocument.querySelector(".content");
+            const templateBackButton = createArticleBackButton(
+              templateDocument,
+              templateContent?.querySelector(".back"),
+            );
             if (templateHeroTitle) templateHeroTitle.textContent = detailItem.title || "";
             if (templateContent) {
-              templateContent.innerHTML = `${detailItem.description || "<p>Konten belum tersedia.</p>"}
-                <div class="back cms-detail-back"><a href="/artikel">⬅ Kembali ke Artikel</a></div>`;
+              templateContent.innerHTML = detailItem.description || "<p>Konten belum tersedia.</p>";
+              removeArticleBackLinks(templateContent);
+              templateContent.appendChild(templateBackButton);
             }
             setPageStyles([
               ...Array.from(templateDocument.querySelectorAll("style")).map((style) => style.textContent),
@@ -115,19 +122,20 @@ function LegacyPage() {
                 <h1>${escapeHtml(detailItem.title || "")}</h1>
                 <div class="content">
                   ${detailItem.description || "<p>Konten belum tersedia.</p>"}
-                  <div class="back cms-detail-back"><a href="/artikel">⬅ Kembali ke Artikel</a></div>
                 </div>
               </main>
             `);
           }
         } catch {
           setError(reason.message);
+          setIsHydrating(false);
         }
       });
   }, [location.pathname]);
 
   useEffect(() => {
     if (!html) return;
+    let active = true;
 
     const parser = new DOMParser();
     const document = parser.parseFromString(html, "text/html");
@@ -152,6 +160,13 @@ function LegacyPage() {
       cssLink.rel = "stylesheet";
       window.document.head.appendChild(cssLink);
     }
+    const cssHref = new URL(cssPath, window.location.href).href;
+    const stylesheetReady = cssLink.href === cssHref && cssLink.sheet
+      ? Promise.resolve()
+      : new Promise((resolve) => {
+          cssLink.addEventListener("load", resolve, { once: true });
+          cssLink.addEventListener("error", resolve, { once: true });
+        });
     cssLink.href = cssPath;
 
     const body = window.document.querySelector(".legacy-page");
@@ -484,7 +499,7 @@ function LegacyPage() {
         }
       }
 
-      fetch("/api/content")
+      fetch("/api/content", { cache: "no-store" })
         .then((response) => response.ok ? response.json() : null)
         .then((content) => {
           if (!content) return;
@@ -680,7 +695,11 @@ function LegacyPage() {
                   card.className = "equipment-feature-card";
                   const icon = window.document.createElement("div");
                   icon.className = "equipment-feature-icon";
-                  icon.textContent = feature.icon || "◆";
+                  const rawIcon = String(feature.icon || "◆");
+                  const featureTitle = String(feature.title || "");
+                  icon.textContent = rawIcon.includes(featureTitle)
+                    ? (rawIcon.replace(featureTitle, "").trim() || "◆")
+                    : rawIcon;
                   const title = window.document.createElement("strong");
                   title.textContent = String(feature.title || "");
                   card.appendChild(icon);
@@ -700,60 +719,6 @@ function LegacyPage() {
 
               // Render from the CMS API directly so newly added cards and icon changes
               // never depend on a delayed React content-state refresh.
-              fetch("/api/content", { cache: "no-store" })
-                .then((response) => response.ok ? response.json() : null)
-                .then((cmsContent) => {
-                  if (!cmsContent?.information || !location.pathname.startsWith("/perlengkapan")) return;
-                  const cmsItem = cmsContent.information.find((item) =>
-                    String(item.url || "").replace(/\/+$/, "").replace(/\.html$/, "") === "/perlengkapan"
-                  );
-                  const cmsFeatures = Array.isArray(cmsItem?.equipment_features)
-                    ? cmsItem.equipment_features.filter((feature) =>
-                        feature && String(feature.title || "").trim())
-                    : [];
-                  if (!cmsFeatures.length) return;
-
-                  body.querySelector("#equipment-feature-grid")?.remove();
-                  const cmsFeatureGrid = window.document.createElement("div");
-                  cmsFeatureGrid.id = "equipment-feature-grid";
-                  cmsFeatureGrid.className = "equipment-feature-grid";
-                  cmsFeatureGrid.style.cssText = "display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:0 0 28px";
-
-                  cmsFeatures.forEach((feature, featureIndex) => {
-                    const card = window.document.createElement("div");
-                    card.className = "equipment-feature-card";
-                    card.style.cssText = "min-width:0;min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:22px 14px;text-align:center;color:#392a22;background:linear-gradient(135deg,#fff,#fffaf5);border:1px solid #f0e2d5;border-radius:16px;box-shadow:0 7px 20px rgba(55,35,22,.08)";
-
-                    if (feature.image) {
-                      const image = window.document.createElement("img");
-                      image.className = "equipment-feature-image";
-                      image.src = feature.image;
-                      image.alt = String(feature.title || `Fitur ${featureIndex + 1}`);
-                      image.style.cssText = "width:58px;height:58px;object-fit:contain";
-                      card.appendChild(image);
-                    } else {
-                      const icon = window.document.createElement("div");
-                      icon.className = "equipment-feature-icon";
-                      icon.style.cssText = "min-width:48px;height:48px;display:flex;align-items:center;justify-content:center;color:#ed7028;background:#fff7ef;border:1px solid #f0e2d5;border-radius:50%;font-size:24px;font-weight:800;line-height:1";
-                      const rawIcon = String(feature.icon || "◆");
-                      const title = String(feature.title || "");
-                      icon.textContent = rawIcon.includes(title)
-                        ? (rawIcon.replace(title, "").trim() || "◆")
-                        : rawIcon;
-                      card.appendChild(icon);
-                    }
-
-                    const cardTitle = window.document.createElement("strong");
-                    cardTitle.textContent = String(feature.title || "");
-                    cardTitle.style.cssText = "display:block;font-size:15px;line-height:1.45";
-                    card.appendChild(cardTitle);
-                    cmsFeatureGrid.appendChild(card);
-                  });
-
-                  const cmsGrid = body.querySelector("#perlengkapan");
-                  cmsGrid?.before(cmsFeatureGrid);
-                })
-                .catch(() => {});
               const equipmentTextBlocks = getEquipmentTextBlocks(equipmentItem);
               const contentElement = body.querySelector(".content");
               if (contentElement) {
@@ -1001,31 +966,38 @@ function LegacyPage() {
             const heroTitle = body.querySelector(".hero h1");
             if (heroTitle && detailItem.title) heroTitle.textContent = detailItem.title;
             if (contentCard) {
-              const backButton = contentCard.querySelector(".back")?.cloneNode(true);
+              const backButton = createArticleBackButton(
+                window.document,
+                contentCard.querySelector(".back"),
+              );
               const originalGallery = contentCard.querySelector(".gallery-grid")?.cloneNode(true);
               contentCard.innerHTML = detailItem.description;
+              removeArticleBackLinks(contentCard);
 
               if (originalGallery && !contentCard.querySelector(".gallery-grid")) {
                 contentCard.prepend(originalGallery);
               }
-              if (backButton) contentCard.appendChild(backButton);
+              contentCard.appendChild(backButton);
 
-              if (backButton) {
-                backButton.addEventListener("click", (event) => {
-                  event.preventDefault();
-                  navigate("/artikel");
-                });
-              }
+              backButton.addEventListener("click", (event) => {
+                event.preventDefault();
+                navigate("/artikel");
+              });
             }
           }
         })
-        .catch(() => {});
+        .catch(() => {})
+        .finally(async () => {
+          await stylesheetReady;
+          if (active) setIsHydrating(false);
+        });
 
       body.querySelectorAll("script").forEach((originalScript) => {
         originalScript.remove();
       });
 
       return () => {
+        active = false;
         cleanup.forEach((fn) => fn());
         styleCleanup.forEach((fn) => fn());
       };
@@ -1033,7 +1005,12 @@ function LegacyPage() {
   }, [html, pageStyles, location.pathname, navigate]);
 
   if (error) return <main className="legacy-error">{error}</main>;
-  return <div className="legacy-page" dangerouslySetInnerHTML={{ __html: html }} />;
+  return (
+    <div
+      className={`legacy-page ${isHydrating ? "cms-hydrating" : "cms-ready"}`}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
 }
 
 window.openWA = function (message) {
@@ -1242,15 +1219,30 @@ function AdminDashboard() {
   }
 
   async function loadContent() {
-    const sessionResponse = await fetch("/api/admin/session");
-    if (sessionResponse.status === 401) {
-      navigate("/admin/login", { replace: true });
-      return;
-    }
-    const contentResponse = await fetch("/api/content");
-    if (contentResponse.ok) {
-      setContent(await contentResponse.json());
+    try {
+      const sessionResponse = await fetch("/api/admin/session");
+      if (sessionResponse.status === 401) {
+        navigate("/admin/login", { replace: true });
+        return;
+      }
+      if (!sessionResponse.ok) {
+        setMessage(`Sesi admin gagal diperiksa (HTTP ${sessionResponse.status}).`);
+        return;
+      }
+      const contentResponse = await fetch("/api/content");
+      if (!contentResponse.ok) {
+        const data = await contentResponse.json().catch(() => ({}));
+        setMessage(
+          `${data.error || "Data dashboard gagal dimuat"} (HTTP ${contentResponse.status}). Periksa log backend.`,
+        );
+        return;
+      }
+      const loadedContent = await contentResponse.json();
+      setContent(loadedContent);
       setStaffOrderDirty(false);
+      setMessage("");
+    } catch (error) {
+      setMessage(`Data dashboard gagal dimuat: ${error.message || "periksa koneksi backend."}`);
     }
   }
 
@@ -1271,17 +1263,25 @@ function AdminDashboard() {
   }
 
   async function uploadImage(event, setImage) {
-    const file = event.target.files?.[0];
+    const input = event.currentTarget;
+    const file = input.files?.[0];
     if (!file) return;
     const form = new FormData();
     form.append("file", file);
-    const response = await fetch("/api/admin/upload", { method: "POST", body: form });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      setMessage(data.error || "Upload gagal");
-      return;
+    try {
+      const response = await fetch("/api/admin/upload", { method: "POST", body: form });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setMessage(data.error || "Upload foto gagal");
+        return;
+      }
+      setImage(data.url);
+      setMessage("Foto berhasil diunggah. Simpan perubahan staf untuk menerapkannya.");
+    } catch (error) {
+      setMessage(error.message || "Upload foto gagal. Periksa koneksi lalu coba lagi.");
+    } finally {
+      input.value = "";
     }
-    setImage(data.url);
   }
 
   async function saveItem(item) {
@@ -1450,7 +1450,9 @@ function AdminDashboard() {
     });
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
-      setMessage(data.error || "Gagal menyimpan warna");
+      setMessage(
+        [data.error || "Gagal menyimpan warna", data.detail].filter(Boolean).join(": "),
+      );
       return;
     }
     const savedTheme = await response.json();
@@ -1703,6 +1705,35 @@ function AdminDashboard() {
   );
 }
 
+function createArticleBackButton(document, templateButton) {
+  const backButton = templateButton?.cloneNode(true) || document.createElement("div");
+  backButton.classList.add("back");
+  backButton.classList.add("cms-detail-back");
+  let link = backButton.matches("a") ? backButton : backButton.querySelector("a");
+  if (!link) {
+    link = document.createElement("a");
+    backButton.appendChild(link);
+  }
+  link.href = "/artikel";
+  link.textContent = "⬅ Kembali ke Artikel";
+  return backButton;
+}
+
+function removeArticleBackLinks(container) {
+  container.querySelectorAll(".back, .cms-detail-back").forEach((element) => element.remove());
+  container.querySelectorAll("a[href]").forEach((link) => {
+    const label = link.textContent.replace(/\s+/g, " ").trim().toLowerCase();
+    try {
+      const path = new URL(link.getAttribute("href"), window.location.origin).pathname
+        .replace(/\/+$/, "")
+        .replace(/\.html$/, "");
+      if (path === "/artikel" || label.includes("kembali ke artikel")) link.remove();
+    } catch {
+      if (label.includes("kembali ke artikel")) link.remove();
+    }
+  });
+}
+
 function stripHtml(value) {
   if (!value) return "";
   const document = new DOMParser().parseFromString(String(value), "text/html");
@@ -1949,6 +1980,20 @@ function ContentEditor({ section, item, onSave, onCancel, onUpload }) {
               ? <input value={form.category} onChange={(event) => update("category", event.target.value)} />
               : section === "contacts"
               ? <input value={form.category} onChange={(event) => update("category", event.target.value)} placeholder="WhatsApp, Alamat, atau Email" />
+              : section === "staff"
+              ? (
+                <div className="admin-staff-photo-field">
+                  {form.image && <img className="admin-staff-photo-preview" src={form.image} alt={`Pratinjau foto ${form.title || "staf"}`} />}
+                  <input value={form.image} onChange={(event) => update("image", event.target.value)} placeholder="/static/uploads/..." />
+                  <span className="admin-field-hint">Unggah foto baru, lalu klik Simpan untuk memperbarui foto staf.</span>
+                  <input
+                    className="admin-file-input"
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) => onUpload(event, (url) => update("image", url))}
+                  />
+                </div>
+              )
               : (
                 <>
                   <input value={form.image} onChange={(event) => update("image", event.target.value)} placeholder="/static/uploads/..." />
