@@ -4,17 +4,17 @@
 
 [[redirects]]
   from = "/api/*"
-  to = "https://kurma-travel-api.onrender.com/api/:splat"
+  to = "https://project-rpl-travel.onrender.com/api/:splat"
   status = 200
 
 [[redirects]]
   from = "/static/*"
-  to = "https://kurma-travel-api.onrender.com/static/:splat"
+  to = "https://project-rpl-travel.onrender.com/static/:splat"
   status = 200
 
 [[redirects]]
   from = "/favicon.png"
-  to = "https://kurma-travel-api.onrender.com/favicon.png"
+  to = "https://project-rpl-travel.onrender.com/favicon.png"
   status = 200
 
 [[redirects]]
