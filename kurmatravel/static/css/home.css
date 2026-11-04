@@ -642,6 +642,18 @@ section {
 }
 
 @media (max-width: 600px) {
+    .slider .slides img {
+        width: min(280px, calc(100vw - 56px));
+        flex-basis: min(280px, calc(100vw - 56px));
+        height: clamp(180px, 58vw, 215px);
+    }
+
+    .slider .prev,
+    .slider .next {
+        width: 44px;
+        height: 44px;
+    }
+
     #lightbox {
         padding: 10px;
     }
@@ -985,6 +997,44 @@ footer {
     border-radius: 8px;
     box-shadow: 0 20px 70px rgba(0, 0, 0, 0.35);
     animation: modalEnter 0.25s ease both;
+}
+
+.lightbox-close,
+.lightbox-nav {
+    position: absolute;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    color: #fff;
+    background: rgba(25, 30, 27, 0.72);
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.lightbox-close {
+    top: max(16px, env(safe-area-inset-top));
+    right: max(16px, env(safe-area-inset-right));
+    font-size: 32px;
+    line-height: 1;
+}
+
+.lightbox-prev {
+    left: max(16px, env(safe-area-inset-left));
+}
+
+.lightbox-next {
+    right: max(16px, env(safe-area-inset-right));
+}
+
+.lightbox-nav {
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
 }
 
 /* =========================================
@@ -1454,11 +1504,19 @@ footer {
     .hamburger {
         flex: 1;
         min-width: 0;
+        min-height: 44px;
         display: flex;
         align-items: center;
         justify-content: flex-start;
         gap: 7px;
-        z-index: 2;
+        position: relative;
+        z-index: 4;
+        touch-action: manipulation;
+    }
+
+    .navbar .hamburger:focus-visible {
+        outline: 2px solid #244b3a;
+        outline-offset: 3px;
     }
 
     .hamburger .menu-text {

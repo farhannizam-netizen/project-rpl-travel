@@ -157,6 +157,111 @@ function LegacyPage() {
     const body = window.document.querySelector(".legacy-page");
     if (body) {
       const cleanup = [];
+      let renderHomeGalleryItems;
+      const posterModal = body.querySelector("#posterModal");
+      const posterImage = body.querySelector("#posterModalImage");
+      if (posterModal && posterImage) {
+        const originalBodyOverflow = window.document.body.style.overflow;
+        const closePoster = () => {
+          posterModal.classList.remove("show");
+          posterModal.setAttribute("aria-hidden", "true");
+          window.document.body.style.overflow = originalBodyOverflow;
+        };
+        const openPoster = (imagePath) => {
+          const imageUrl = String(imagePath || "").trim().replace(/^\.\//, "");
+          if (!imageUrl) return;
+          const resolvedImageUrl = /^(?:https?:|data:|blob:|\/)/i.test(imageUrl)
+            ? imageUrl
+            : `/${imageUrl}`;
+          posterImage.onerror = () => {
+            posterImage.alt = "Poster paket tidak dapat dimuat";
+          };
+          posterImage.src = resolvedImageUrl;
+          posterImage.alt = "Poster paket Umrah dan Haji";
+          posterModal.classList.add("show");
+          posterModal.setAttribute("aria-hidden", "false");
+          window.document.body.style.overflow = "hidden";
+        };
+        const closePosterOutside = (event) => {
+          if (event.target === posterModal) closePoster();
+        };
+        const escapeHandler = (event) => {
+          if (event.key === "Escape") closePoster();
+        };
+
+        window.openPoster = openPoster;
+        window.closePoster = closePoster;
+        window.closePosterOutside = closePosterOutside;
+        window.document.addEventListener("keydown", escapeHandler);
+        cleanup.push(() => {
+          window.document.removeEventListener("keydown", escapeHandler);
+          posterImage.onerror = null;
+          window.document.body.style.overflow = originalBodyOverflow;
+          if (window.openPoster === openPoster) delete window.openPoster;
+          if (window.closePoster === closePoster) delete window.closePoster;
+          if (window.closePosterOutside === closePosterOutside) delete window.closePosterOutside;
+        });
+      }
+
+      const homePosterModal = body.querySelector("#homePosterModal");
+      const homePosterImage = body.querySelector("#homePosterImage");
+      if (homePosterModal && homePosterImage) {
+        const originalBodyOverflow = window.document.body.style.overflow;
+        const closeHomePoster = () => {
+          homePosterModal.classList.remove("is-visible");
+          homePosterModal.setAttribute("aria-hidden", "true");
+          window.document.body.style.overflow = originalBodyOverflow;
+        };
+        const openHomePoster = (imagePath) => {
+          const imageUrl = String(imagePath || "").trim().replace(/^\.\//, "");
+          if (!imageUrl) return;
+          const resolvedImageUrl = /^(?:https?:|data:|blob:|\/)/i.test(imageUrl)
+            ? imageUrl
+            : `/${imageUrl}`;
+          homePosterImage.onerror = () => {
+            homePosterImage.alt = "Poster paket tidak dapat dimuat";
+          };
+          homePosterImage.src = resolvedImageUrl;
+          homePosterImage.alt = "Poster paket Kurma Travel";
+          homePosterModal.classList.add("is-visible");
+          homePosterModal.setAttribute("aria-hidden", "false");
+          window.document.body.style.overflow = "hidden";
+        };
+        const closeHomePosterOutside = (event) => {
+          if (event.target === homePosterModal) closeHomePoster();
+        };
+        const escapeHandler = (event) => {
+          if (event.key === "Escape" && homePosterModal.classList.contains("is-visible")) {
+            closeHomePoster();
+          }
+        };
+
+        window.openHomePoster = openHomePoster;
+        window.closeHomePoster = closeHomePoster;
+        window.closeHomePosterOutside = closeHomePosterOutside;
+        window.document.addEventListener("keydown", escapeHandler);
+        cleanup.push(() => {
+          window.document.removeEventListener("keydown", escapeHandler);
+          homePosterImage.onerror = null;
+          window.document.body.style.overflow = originalBodyOverflow;
+          if (window.openHomePoster === openHomePoster) delete window.openHomePoster;
+          if (window.closeHomePoster === closeHomePoster) delete window.closeHomePoster;
+          if (window.closeHomePosterOutside === closeHomePosterOutside) delete window.closeHomePosterOutside;
+        });
+      }
+
+      const packageDetailModal = body.querySelector("#packageDetailModal");
+      if (packageDetailModal) {
+        const closePackageDetail = () => {
+          packageDetailModal.classList.remove("show");
+          window.document.body.style.overflow = "";
+        };
+        window.closePackageDetail = closePackageDetail;
+        cleanup.push(() => {
+          if (window.closePackageDetail === closePackageDetail) delete window.closePackageDetail;
+        });
+      }
+
       if (!body.querySelector("#waFloat")) {
         const floatButton = window.document.createElement("div");
         floatButton.id = "waFloat";
@@ -209,14 +314,21 @@ function LegacyPage() {
             window.openWA?.(message);
           };
           node.addEventListener("click", handler);
+          node.removeAttribute("onclick");
           cleanup.push(() => node.removeEventListener("click", handler));
         }
         if (inlineClick?.includes("closeWA")) {
           const handler = (event) => {
-            event.prevent?.();
+            if (
+              (node.id === "waModal" || node.classList.contains("wa-modal")) &&
+              event.target !== node
+            ) {
+              return;
+            }
             window.closeWA?.();
           };
           node.addEventListener("click", handler);
+          node.removeAttribute("onclick");
           cleanup.push(() => node.removeEventListener("click", handler));
         }
       });
@@ -224,9 +336,25 @@ function LegacyPage() {
       const hamburger = body.querySelector("#hamburger");
       const navMenu = body.querySelector("#navMenu");
       if (hamburger && navMenu) {
-        const handler = () => navMenu.classList.toggle("active");
+        const handler = () => {
+          const isExpanded = navMenu.classList.toggle("show");
+          hamburger.setAttribute("aria-expanded", String(isExpanded));
+        };
+        hamburger.setAttribute("role", "button");
+        hamburger.setAttribute("tabindex", "0");
+        hamburger.setAttribute("aria-controls", "navMenu");
+        hamburger.setAttribute("aria-expanded", "false");
         hamburger.addEventListener("click", handler);
         cleanup.push(() => hamburger.removeEventListener("click", handler));
+
+        const keyHandler = (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            handler();
+          }
+        };
+        hamburger.addEventListener("keydown", keyHandler);
+        cleanup.push(() => hamburger.removeEventListener("keydown", keyHandler));
       }
 
       body.querySelectorAll(".btn-wa").forEach((button) => {
@@ -240,6 +368,82 @@ function LegacyPage() {
         button.addEventListener("click", handler);
         cleanup.push(() => button.removeEventListener("click", handler));
       });
+
+      const isHomePage = location.pathname === "/" || location.pathname === "/index.html";
+      const homeGallerySlides = isHomePage ? body.querySelector(".slider .slides") : null;
+      const homeGallerySlider = isHomePage ? body.querySelector(".slider") : null;
+      if (homeGallerySlides && homeGallerySlider) {
+        let slideIndex = 0;
+        const getGalleryItems = () => Array.from(homeGallerySlides.querySelectorAll("img"));
+        const updateGalleryPosition = () => {
+          const images = getGalleryItems();
+          const firstImage = images[0];
+          if (!firstImage) {
+            homeGallerySlides.style.transform = "";
+            return;
+          }
+          const itemWidth = firstImage.getBoundingClientRect().width + 15;
+          const visibleWidth = homeGallerySlider.clientWidth || window.innerWidth;
+          const maxIndex = Math.max(0, Math.ceil(
+            (homeGallerySlides.scrollWidth - visibleWidth) / itemWidth
+          ));
+          slideIndex = Math.min(slideIndex, maxIndex);
+          homeGallerySlides.style.transform = `translateX(-${slideIndex * itemWidth}px)`;
+        };
+        const moveGallery = (direction) => {
+          const images = getGalleryItems();
+          if (images.length < 2) return;
+          const itemWidth = images[0].getBoundingClientRect().width + 15;
+          const visibleWidth = homeGallerySlider.clientWidth || window.innerWidth;
+          const maxIndex = Math.max(0, Math.ceil(
+            (homeGallerySlides.scrollWidth - visibleWidth) / itemWidth
+          ));
+          slideIndex = direction > 0
+            ? (slideIndex >= maxIndex ? 0 : slideIndex + 1)
+            : (slideIndex <= 0 ? maxIndex : slideIndex - 1);
+          updateGalleryPosition();
+        };
+        renderHomeGalleryItems = (items) => {
+          const fragment = window.document.createDocumentFragment();
+          items.forEach((item) => {
+            if (!item.image) return;
+            const image = window.document.createElement("img");
+            image.src = item.image;
+            image.alt = item.title || "Dokumentasi Kurma Travel";
+            image.loading = "lazy";
+            image.decoding = "async";
+            image.addEventListener("click", () => window.openLightbox?.(image.src));
+            image.addEventListener("error", () => {
+              image.remove();
+              requestAnimationFrame(updateGalleryPosition);
+            });
+            fragment.appendChild(image);
+          });
+          homeGallerySlides.replaceChildren(fragment);
+          window.galleryImages = items.filter((item) => item.image).map((item) => item.image);
+          slideIndex = 0;
+          requestAnimationFrame(updateGalleryPosition);
+        };
+        const fallbackGallery = Array.from({ length: 224 }, (_, index) => ({
+          title: `Dokumentasi Kurma Travel ${index + 1}`,
+          image: `/static/images/gallery/gallery${index + 1}.jpg`,
+        }));
+        const previousButton = body.querySelector(".slider .prev");
+        const nextButton = body.querySelector(".slider .next");
+        const previousHandler = () => moveGallery(-1);
+        const nextHandler = () => moveGallery(1);
+        previousButton?.addEventListener("click", previousHandler);
+        nextButton?.addEventListener("click", nextHandler);
+        window.addEventListener("resize", updateGalleryPosition);
+        renderHomeGalleryItems(fallbackGallery);
+        const galleryInterval = window.setInterval(() => moveGallery(1), 4000);
+        cleanup.push(() => {
+          previousButton?.removeEventListener("click", previousHandler);
+          nextButton?.removeEventListener("click", nextHandler);
+          window.removeEventListener("resize", updateGalleryPosition);
+          window.clearInterval(galleryInterval);
+        });
+      }
 
       if (location.pathname === "/galeri" || location.pathname === "/galeri.html") {
         const grid = body.querySelector(".gallery-grid");
@@ -300,68 +504,17 @@ function LegacyPage() {
             if (theme.navbar) navbar.style.backgroundColor = theme.navbar;
           });
 
-          if (location.pathname === "/" || location.pathname === "/index.html") {
-            const slider = body.querySelector(".slider");
-            const slides = body.querySelector(".slides");
-            const prev = body.querySelector(".slider .prev");
-            const next = body.querySelector(".slider .next");
-            if (slides) {
-              slides.replaceChildren();
-              let galleryItems = content.gallery.filter((item) => item.image && !item.hidden && !item.deleted_at);
-                const hasGalleryRecords = content.gallery.some((item) => item.image && !item.deleted_at);
-              if (galleryItems.length === 0 && !hasGalleryRecords) {
-                galleryItems = Array.from({ length: 224 }, (_, index) => ({
-                  title: `Dokumentasi Kurma Travel ${index + 1}`,
-                  image: `/static/images/gallery/gallery${index + 1}.jpg`,
-                }));
-              }
-              window.galleryImages = galleryItems.map((item) => item.image);
-              galleryItems.forEach((item) => {
-                const img = window.document.createElement("img");
-                img.src = item.image;
-                img.alt = item.title || "Dokumentasi Kurma Travel";
-                img.loading = "lazy";
-                img.addEventListener("error", () => img.remove());
-                img.addEventListener("click", () => window.openLightbox?.(img.src));
-                slides.appendChild(img);
-              });
-
-              let index = 0;
-              const update = () => {
-                const firstImage = slides.querySelector("img");
-                if (!firstImage) return;
-                const gap = 15;
-                const itemWidth = firstImage.offsetWidth + gap;
-                const visibleWidth = slider?.clientWidth || window.innerWidth;
-                const maxIndex = Math.max(0, Math.ceil((slides.scrollWidth - visibleWidth) / itemWidth));
-                index = Math.min(index, maxIndex);
-                slides.style.transform = `translateX(-${index * itemWidth}px)`;
-              };
-              const move = (direction) => {
-                const firstImage = slides.querySelector("img");
-                if (!firstImage) return;
-                const itemWidth = firstImage.offsetWidth + 15;
-                const maxIndex = Math.max(0, Math.ceil((slides.scrollWidth - (slider?.clientWidth || window.innerWidth)) / itemWidth));
-                index = direction > 0
-                  ? (index >= maxIndex ? 0 : index + 1)
-                  : (index <= 0 ? maxIndex : index - 1);
-                update();
-              };
-              const nextHandler = () => move(1);
-              const prevHandler = () => move(-1);
-              next?.addEventListener("click", nextHandler);
-              prev?.addEventListener("click", prevHandler);
-              cleanup.push(() => {
-                next?.removeEventListener("click", nextHandler);
-                prev?.removeEventListener("click", prevHandler);
-              });
-              requestAnimationFrame(update);
-              window.addEventListener("resize", update);
-              cleanup.push(() => window.removeEventListener("resize", update));
-              if (galleryItems.length > 0) {
-                const interval = window.setInterval(() => move(1), 4000);
-                cleanup.push(() => window.clearInterval(interval));
-              }
+          if (isHomePage && Array.isArray(content.gallery)) {
+            const galleryItems = content.gallery.filter(
+              (item) => item.image && !item.hidden && !item.deleted_at
+            );
+            const hasGalleryRecords = content.gallery.some(
+              (item) => item.image && !item.deleted_at
+            );
+            if (galleryItems.length > 0) {
+              renderHomeGalleryItems?.(galleryItems);
+            } else if (hasGalleryRecords) {
+              renderHomeGalleryItems?.([]);
             }
           }
 
@@ -913,6 +1066,16 @@ window.openLightbox = function (source) {
     lightbox.className = "lightbox";
     lightbox.innerHTML = '<button type="button" class="lightbox-close" aria-label="Tutup foto">&times;</button><button type="button" class="lightbox-nav lightbox-prev" aria-label="Foto sebelumnya">&#10094;</button><img id="lightbox-img" src="" alt="Foto dokumentasi Kurma Travel"><button type="button" class="lightbox-nav lightbox-next" aria-label="Foto berikutnya">&#10095;</button>';
     document.body.appendChild(lightbox);
+  }
+
+  let close = lightbox.querySelector(".lightbox-close");
+  if (!close) {
+    close = document.createElement("button");
+    close.type = "button";
+    close.className = "lightbox-close";
+    close.setAttribute("aria-label", "Tutup foto");
+    close.textContent = "×";
+    lightbox.prepend(close);
   }
 
   let previous = lightbox.querySelector(".lightbox-prev");

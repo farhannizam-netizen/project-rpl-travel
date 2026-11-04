@@ -1334,11 +1334,19 @@ footer {
     .hamburger {
         flex: 1;
         min-width: 0;
+        min-height: 44px;
         display: flex;
         align-items: center;
         justify-content: flex-start;
         gap: 7px;
-        z-index: 2;
+        position: relative;
+        z-index: 4;
+        touch-action: manipulation;
+    }
+
+    .navbar .hamburger:focus-visible {
+        outline: 2px solid #244b3a;
+        outline-offset: 3px;
     }
 
     .hamburger .menu-text {
