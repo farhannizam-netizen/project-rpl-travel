@@ -3,6 +3,30 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import "./admin.css";
 
+const PUBLIC_CONTENT_CACHE_KEY = "kurma-travel:public-content:v1";
+const PAGE_CACHE_PREFIX = "kurma-travel:page:v1:";
+
+function readLocalCache(key) {
+  try {
+    const value = window.localStorage.getItem(key);
+    return value ? JSON.parse(value) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeLocalCache(key, value) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // The network response remains usable if browser storage is unavailable or full.
+  }
+}
+
+function sameContent(left, right) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
 const pageMap = {
   "/": "index.html",
   "/index.html": "index.html",
@@ -39,13 +63,26 @@ function LegacyPage() {
   const [isHydrating, setIsHydrating] = useState(true);
   const [pageStyles, setPageStyles] = useState([]);
   const [error, setError] = useState("");
+  const skipNextContentFetchRef = useRef(false);
+  const lastRefreshAtRef = useRef(0);
 
   useEffect(() => {
+    let active = true;
     const pathName = location.pathname.replace(/\/+$/, "") || "/";
     const page = pageMap[pathName] || `${pathName.replace(/^\/+/, "") || "index"}.html`;
     setError("");
-    setIsHydrating(true);
-    setHtml("");
+    const pageCacheKey = `${PAGE_CACHE_PREFIX}${page}`;
+    const cachedPage = readLocalCache(pageCacheKey);
+    const cachedContent = readLocalCache(PUBLIC_CONTENT_CACHE_KEY);
+    if (cachedPage?.html) {
+      setPageStyles(cachedPage.styles || []);
+      if (cachedPage.title) window.document.title = cachedPage.title;
+      setHtml(cachedPage.html);
+      setIsHydrating(true);
+    } else {
+      setIsHydrating(true);
+      setHtml("");
+    }
 
     fetch(`/api/page/${encodeURIComponent(page)}`)
       .then((response) => {
@@ -53,12 +90,23 @@ function LegacyPage() {
         return response.json();
       })
       .then((data) => {
+        if (!active) return;
         const document = new DOMParser().parseFromString(data.html, "text/html");
-        setPageStyles(Array.from(document.querySelectorAll("style")).map((style) => style.textContent));
-        if (document.title) window.document.title = document.title;
-        setHtml(document.body.innerHTML);
+        const freshPage = {
+          html: document.body.innerHTML,
+          styles: Array.from(document.querySelectorAll("style")).map((style) => style.textContent),
+          title: document.title,
+        };
+        writeLocalCache(pageCacheKey, freshPage);
+        if (!cachedPage || !sameContent(cachedPage, freshPage)) {
+          setPageStyles(freshPage.styles);
+          if (freshPage.title) window.document.title = freshPage.title;
+          setHtml(freshPage.html);
+        }
       })
       .catch(async (reason) => {
+        if (!active) return;
+        if (cachedPage?.html) return;
         try {
           const currentRoute = location.pathname.replace(/\/+$/, "").replace(/\.html$/, "");
           const contentResponse = await fetch("/api/content", { cache: "no-store" });
@@ -95,6 +143,7 @@ function LegacyPage() {
           `;
           const templateName = detailSection === "information" ? "tentang.html" : "artikel-tips.html";
           const templateResponse = await fetch(`/api/page/${templateName}`);
+          if (!active) return;
           if (templateResponse.ok) {
             const templateData = await templateResponse.json();
             const templateDocument = new DOMParser().parseFromString(templateData.html, "text/html");
@@ -127,11 +176,50 @@ function LegacyPage() {
             `);
           }
         } catch {
-          setError(reason.message);
-          setIsHydrating(false);
+          if (active) {
+            setError(reason.message);
+            setIsHydrating(false);
+          }
         }
       });
+    return () => {
+      active = false;
+    };
   }, [location.pathname]);
+
+  useEffect(() => {
+    const revalidateContent = () => {
+      if (document.visibilityState === "hidden") return;
+      const now = Date.now();
+      if (now - lastRefreshAtRef.current < 5000) return;
+      lastRefreshAtRef.current = now;
+
+      fetch("/api/content", { cache: "no-store" })
+        .then((response) => response.ok ? response.json() : null)
+        .then((content) => {
+          if (!content) return;
+          const cachedContent = readLocalCache(PUBLIC_CONTENT_CACHE_KEY);
+          writeLocalCache(PUBLIC_CONTENT_CACHE_KEY, content);
+          if (cachedContent && !sameContent(cachedContent, content)) {
+            skipNextContentFetchRef.current = true;
+            setIsHydrating(true);
+            setHtml((current) => `${current} `);
+          }
+        })
+        .catch(() => {});
+    };
+
+    window.addEventListener("pageshow", revalidateContent);
+    window.addEventListener("focus", revalidateContent);
+    document.addEventListener("visibilitychange", revalidateContent);
+    const refreshInterval = window.setInterval(revalidateContent, 30000);
+    return () => {
+      window.removeEventListener("pageshow", revalidateContent);
+      window.removeEventListener("focus", revalidateContent);
+      document.removeEventListener("visibilitychange", revalidateContent);
+      window.clearInterval(refreshInterval);
+    };
+  }, []);
 
   useEffect(() => {
     if (!html) return;
@@ -499,10 +587,20 @@ function LegacyPage() {
         }
       }
 
-      fetch("/api/content", { cache: "no-store" })
-        .then((response) => response.ok ? response.json() : null)
+      const cachedContent = readLocalCache(PUBLIC_CONTENT_CACHE_KEY);
+      const skipContentFetch = skipNextContentFetchRef.current;
+      skipNextContentFetchRef.current = false;
+      const initialContentRequest = cachedContent
+        ? Promise.resolve(cachedContent)
+        : skipContentFetch
+          ? Promise.resolve(null)
+          : fetch("/api/content", { cache: "no-store" })
+            .then((response) => response.ok ? response.json() : null);
+
+      initialContentRequest
         .then((content) => {
-          if (!content) return;
+          if (!content || !active) return;
+          writeLocalCache(PUBLIC_CONTENT_CACHE_KEY, content);
           const theme = content.theme || {};
           const themeVariables = {
             "--primary": theme.primary,
@@ -992,6 +1090,22 @@ function LegacyPage() {
           if (active) setIsHydrating(false);
         });
 
+      if (cachedContent && !skipContentFetch) {
+        fetch("/api/content", { cache: "no-store" })
+          .then((response) => response.ok ? response.json() : null)
+          .then((content) => {
+            if (!content || !active) return;
+            const previousContent = readLocalCache(PUBLIC_CONTENT_CACHE_KEY);
+            writeLocalCache(PUBLIC_CONTENT_CACHE_KEY, content);
+            if (previousContent && !sameContent(previousContent, content)) {
+              skipNextContentFetchRef.current = true;
+              setIsHydrating(true);
+              setHtml((current) => `${current} `);
+            }
+          })
+          .catch(() => {});
+      }
+
       body.querySelectorAll("script").forEach((originalScript) => {
         originalScript.remove();
       });
@@ -1238,6 +1352,7 @@ function AdminDashboard() {
         return;
       }
       const loadedContent = await contentResponse.json();
+      writeLocalCache(PUBLIC_CONTENT_CACHE_KEY, loadedContent);
       setContent(loadedContent);
       setStaffOrderDirty(false);
       setMessage("");
@@ -1456,7 +1571,11 @@ function AdminDashboard() {
       return;
     }
     const savedTheme = await response.json();
-    setContent((current) => ({ ...current, theme: savedTheme }));
+    setContent((current) => {
+      const updatedContent = { ...current, theme: savedTheme };
+      writeLocalCache(PUBLIC_CONTENT_CACHE_KEY, updatedContent);
+      return updatedContent;
+    });
     setMessage("Tema warna berhasil disimpan.");
   }
 

@@ -76,6 +76,10 @@ def add_static_cache_headers(response):
     path = request.path
     if path.startswith("/static/images/gallery/") or path.startswith("/static/uploads/"):
         response.headers["Cache-Control"] = "public, max-age=86400"
+    elif path.startswith("/static/css/"):
+        response.headers["Cache-Control"] = "public, max-age=0, must-revalidate"
+    elif path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-store"
     return response
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD_HASH = generate_password_hash(os.environ.get("ADMIN_PASSWORD", "admin123"))
