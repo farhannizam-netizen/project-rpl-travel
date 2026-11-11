@@ -307,6 +307,13 @@ function LegacyPage() {
 
     const body = window.document.querySelector(".legacy-page");
     if (body) {
+      if (!body.querySelector("#siteNavigation")) {
+        window.ktSiteNavCleanup?.();
+        const placeholder = window.document.createElement("div");
+        placeholder.id = "siteNavigation";
+        body.prepend(placeholder);
+      }
+
       const cleanup = [];
       let renderHomeGalleryItems;
       const legacyNavigate = (path) => navigate(path);
