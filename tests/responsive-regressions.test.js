@@ -25,6 +25,14 @@ describe("responsive gallery and WhatsApp modal regressions", () => {
     );
   });
 
+  it("recreates the navbar mount point when cleanup removed it before script initialization", () => {
+    const script = readProjectFile("kurmatravel/static/js/site-nav.js");
+
+    expect(script).toMatch(
+      /let placeholder = document\.getElementById\("siteNavigation"\);[\s\S]*?if \(!placeholder\) \{\s*const legacyPage = document\.querySelector\("\.legacy-page"\);\s*if \(!legacyPage\) return;\s*placeholder = document\.createElement\("div"\);\s*placeholder\.id = "siteNavigation";\s*legacyPage\.prepend\(placeholder\);\s*\}/
+    );
+  });
+
   it("keeps the gallery in two masonry columns on mobile without fixed image heights", () => {
     const css = readProjectFile("kurmatravel/static/css/style.css");
     const galleryRules = css.slice(css.indexOf("/* GALERI PINTEREST DAN LIGHTBOX */"));

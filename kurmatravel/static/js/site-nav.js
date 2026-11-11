@@ -3,8 +3,14 @@
         window.ktSiteNavCleanup();
     }
 
-    const placeholder = document.getElementById("siteNavigation");
-    if (!placeholder) return;
+    let placeholder = document.getElementById("siteNavigation");
+    if (!placeholder) {
+        const legacyPage = document.querySelector(".legacy-page");
+        if (!legacyPage) return;
+        placeholder = document.createElement("div");
+        placeholder.id = "siteNavigation";
+        legacyPage.prepend(placeholder);
+    }
 
     const links = [
         ["index.html", "Home", '<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>'],
