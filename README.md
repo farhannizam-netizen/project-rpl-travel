@@ -192,6 +192,8 @@ run.cmd
 Website menyimpan data CMS dan tema di `data/kurmatravel.db`. Saat backend pertama kali dijalankan,
 data lama dari `data/cms.json` dipindahkan ke SQLite secara otomatis. File JSON tersebut tetap
 dipertahankan sebagai cadangan dan tidak lagi menjadi sumber penyimpanan utama setelah migrasi.
+SQLite ini ditujukan untuk pengembangan lokal; jangan mengandalkannya sebagai penyimpanan permanen
+di Render. Folder `data/` tidak dikirim ke Git.
 
 Data yang disimpan SQLite meliputi paket, galeri, artikel, informasi, staf, kontak, status
 sembunyikan galeri, foto galeri di sampah, dan tema warna website.
@@ -210,12 +212,20 @@ values ('USER-UUID-DARI-AUTH-USERS', 'admin')
 on conflict (user_id) do update set role = 'admin';
 ```
 
-6. Copy `.env.example` menjadi `.env`, lalu isi URL, anon key, service role key, dan secret key.
-7. Jalankan migrasi data:
+6. Copy `.env.example` menjadi `.env` untuk pengembangan lokal, lalu isi URL, anon key, service
+   role key, dan secret key. Jangan commit `.env`; pada Render, isi variabel langsung di pengaturan
+   Environment service.
+7. Jalankan migrasi data dalam mode simulasi terlebih dahulu:
 
 ```cmd
 python migrate_to_supabase.py
 ```
+
+Migrasi default hanya membaca dan melaporkan jumlah data yang akan dimasukkan. Perintah
+`python migrate_to_supabase.py --apply` hanya menambahkan pasangan `(section, id)` yang belum ada;
+baris konten dan kunci tema yang sudah ada di Supabase dipertahankan. File upload lokal yang
+dibutuhkan oleh konten baru diunggah dengan nama berbasis hash agar tidak menimpa file lama.
+Periksa hasil dry-run dan backup sebelum memakai `--apply`.
 
 8. Jalankan aplikasi dengan environment Supabase aktif:
 
@@ -278,7 +288,8 @@ meneruskan `/api/*`, `/static/*`, dan `/favicon.png` ke backend Render agar logi
 serta halaman informasi tetap berfungsi. Supabase tetap menjadi penyimpanan konten dan upload.
 
 1. Deploy repository ini di Render sebagai Blueprint menggunakan `render.yaml`. Service akan
-   bernama `kurma-travel-api`.
+   bernama `kurma-travel-api`. Jika mempertahankan service aktif dengan URL berbeda, jangan membuat
+   service Blueprint baru tanpa memastikan nama dan target proxy tetap sesuai.
 2. Isi `SUPABASE_URL`, `SUPABASE_ANON_KEY`, dan `SUPABASE_SERVICE_ROLE_KEY` pada environment
    service Render. Gunakan project Supabase yang sudah ada. Service role key hanya disimpan di
    environment backend Render.

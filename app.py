@@ -262,9 +262,15 @@ else:
     database.initialize_database(DB_FILE, DATA_FILE, default_content)
 
 
-def load_content():
+def load_content(include_archived=False, include_hidden=False):
     if USE_SUPABASE:
-        content = supabase_database.load_content(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, DEFAULT_THEME)
+        content = supabase_database.load_content(
+            SUPABASE_URL,
+            SUPABASE_SERVICE_ROLE_KEY,
+            DEFAULT_THEME,
+            include_archived=include_archived,
+            include_hidden=include_hidden,
+        )
         fallback = legacy_content()
         for section in ("articles", "information"):
             if content.get(section):
@@ -297,7 +303,12 @@ def load_content():
                         if fallback_item.get("equipment_text_blocks") and not item.get("equipment_text_blocks"):
                             item["equipment_text_blocks"] = fallback_item["equipment_text_blocks"]
         return content
-    return database.load_content(DB_FILE, DEFAULT_THEME)
+    return database.load_content(
+        DB_FILE,
+        DEFAULT_THEME,
+        include_archived=include_archived,
+        include_hidden=include_hidden,
+    )
 
 
 def save_content(content):
@@ -361,6 +372,18 @@ def public_content():
     except Exception:
         app.logger.exception("Gagal memuat konten dari database")
         return jsonify({"error": "Konten gagal dimuat. Periksa log backend."}), 500
+
+
+@app.get("/api/admin/content")
+def admin_content():
+    auth_error = require_admin()
+    if auth_error:
+        return auth_error
+    try:
+        return jsonify(load_content(include_archived=True, include_hidden=True))
+    except Exception:
+        app.logger.exception("Gagal memuat konten admin beserta arsip")
+        return jsonify({"error": "Konten admin gagal dimuat. Periksa log backend."}), 500
 
 
 @app.put("/api/admin/theme")
@@ -442,30 +465,32 @@ def update_content(section, item_id):
 
 
 @app.put("/api/admin/staff/order")
-def update_staff_order():
+@app.put("/api/admin/content/<section>/order")
+def update_content_order(section="staff"):
     auth_error = require_admin()
     if auth_error:
         return auth_error
 
+    if section not in database.SECTIONS:
+        return jsonify({"error": "Bagian konten tidak valid"}), 400
     payload = request.get_json(silent=True) or {}
     ordered_ids = payload.get("ids")
     if not isinstance(ordered_ids, list) or not all(isinstance(item_id, str) for item_id in ordered_ids):
-        return jsonify({"error": "Urutan staf tidak valid"}), 400
+        return jsonify({"error": "Urutan konten tidak valid"}), 400
     if len(ordered_ids) != len(set(ordered_ids)):
-        return jsonify({"error": "Daftar staf memiliki ID duplikat"}), 400
-
-    staff = load_content().get("staff", [])
-    if set(ordered_ids) != {item.get("id") for item in staff}:
-        return jsonify({"error": "Daftar staf sudah berubah. Muat ulang sebelum menyimpan urutan."}), 409
+        return jsonify({"error": "Daftar konten memiliki ID duplikat"}), 400
 
     if USE_SUPABASE:
-        updated = supabase_database.update_staff_order(
-            SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ordered_ids
+        updated = supabase_database.update_content_order(
+            SUPABASE_URL,
+            SUPABASE_SERVICE_ROLE_KEY,
+            section,
+            ordered_ids,
         )
     else:
-        updated = database.update_staff_order(DB_FILE, ordered_ids)
+        updated = database.update_content_order(DB_FILE, section, ordered_ids)
     if not updated:
-        return jsonify({"error": "Urutan staf gagal disimpan"}), 500
+        return jsonify({"error": "Daftar konten sudah berubah. Muat ulang sebelum menyimpan urutan."}), 409
     return jsonify({"ok": True})
 
 
@@ -477,20 +502,67 @@ def delete_content(section, item_id):
     if section not in {"packages", "gallery", "articles", "information", "staff", "contacts"}:
         return jsonify({"error": "Bagian konten tidak valid"}), 400
 
-    if section == "gallery":
+    if section in database.ARCHIVABLE_SECTIONS:
         if USE_SUPABASE:
-            deleted, item = supabase_database.delete_item(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, section, item_id)
+            archived = supabase_database.archive_item(
+                SUPABASE_URL,
+                SUPABASE_SERVICE_ROLE_KEY,
+                section,
+                item_id,
+                session.get("admin_username"),
+            )
         else:
-            deleted, item = database.delete_item(DB_FILE, section, item_id)
-        if not deleted:
+            archived = database.archive_item(
+                DB_FILE,
+                section,
+                item_id,
+                session.get("admin_username"),
+            )
+        if not archived:
             return jsonify({"error": "Konten tidak ditemukan"}), 404
-        return jsonify({"ok": True, "trashed": True})
+        return jsonify({"ok": True, "archived": True})
     if USE_SUPABASE:
         deleted, item = supabase_database.delete_item(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, section, item_id)
     else:
         deleted, item = database.delete_item(DB_FILE, section, item_id)
     if not deleted:
         return jsonify({"error": "Konten tidak ditemukan"}), 404
+    return jsonify({"ok": True})
+
+
+@app.post("/api/admin/content/<section>/<item_id>/restore")
+def restore_content_item(section, item_id):
+    auth_error = require_admin()
+    if auth_error:
+        return auth_error
+    if section not in database.ARCHIVABLE_SECTIONS:
+        return jsonify({"error": "Bagian konten tidak dapat dipulihkan"}), 400
+    if USE_SUPABASE:
+        restored, item = supabase_database.restore_item(
+            SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, section, item_id
+        )
+    else:
+        restored, item = database.restore_item(DB_FILE, section, item_id)
+    if not restored:
+        return jsonify({"error": "Konten tidak ditemukan di arsip"}), 404
+    return jsonify(item)
+
+
+@app.delete("/api/admin/content/<section>/<item_id>/permanent")
+def permanently_delete_content_item(section, item_id):
+    auth_error = require_admin()
+    if auth_error:
+        return auth_error
+    if section not in database.ARCHIVABLE_SECTIONS:
+        return jsonify({"error": "Bagian konten tidak dapat dihapus permanen"}), 400
+    if USE_SUPABASE:
+        deleted = supabase_database.permanently_delete_item(
+            SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, section, item_id
+        )
+    else:
+        deleted = database.permanently_delete_item(DB_FILE, section, item_id)
+    if not deleted:
+        return jsonify({"error": "Konten tidak ditemukan di arsip"}), 404
     return jsonify({"ok": True})
 
 
@@ -501,9 +573,11 @@ def restore_gallery_item(item_id):
         return auth_error
 
     if USE_SUPABASE:
-        restored, item = supabase_database.restore_gallery_item(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, item_id)
+        restored, item = supabase_database.restore_item(
+            SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, "gallery", item_id
+        )
     else:
-        restored, item = database.restore_gallery_item(DB_FILE, item_id)
+        restored, item = database.restore_item(DB_FILE, "gallery", item_id)
     if not restored:
         return jsonify({"error": "Foto tidak ditemukan di sampah"}), 404
     return jsonify(item)
@@ -516,9 +590,11 @@ def permanently_delete_gallery_item(item_id):
         return auth_error
 
     if USE_SUPABASE:
-        deleted = supabase_database.permanently_delete_gallery_item(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, item_id)
+        deleted = supabase_database.permanently_delete_item(
+            SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, "gallery", item_id
+        )
     else:
-        deleted = database.permanently_delete_gallery_item(DB_FILE, item_id)
+        deleted = database.permanently_delete_item(DB_FILE, "gallery", item_id)
     if not deleted:
         return jsonify({"error": "Foto tidak ditemukan di sampah"}), 404
     return jsonify({"ok": True})
@@ -556,12 +632,18 @@ def get_page(page):
     if not page.endswith(".html"):
         page += ".html"
 
+    route_key = "/" + page.replace(".html", "").strip("/")
+    content = load_content(include_archived=True)
+    for section in ("articles", "information"):
+        for item in content.get("archives", {}).get(section, []):
+            item_url = "/" + str(item.get("url") or "").strip("/").replace(".html", "")
+            if item_url == route_key:
+                return jsonify({"error": "Page not found"}), 404
+
     page_path = (SITE_DIR / page).resolve()
     if SITE_DIR.resolve() in page_path.parents and page_path.is_file():
         return jsonify({"html": page_path.read_text(encoding="utf-8")})
 
-    route_key = "/" + page.replace(".html", "").strip("/")
-    content = load_content()
     matching_item = None
     template_name = None
     for section, template in (

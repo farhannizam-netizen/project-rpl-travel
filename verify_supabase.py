@@ -34,7 +34,7 @@ def main():
         .execute()
     )
     theme = supabase.table("site_theme").select("key").limit(1).execute()
-    content = load_content(url, key, {})
+    content = load_content(url, key, {}, include_hidden=True)
 
     rows = active.data or []
     visible = sum(1 for row in rows if not row["hidden"])

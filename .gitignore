@@ -15,3 +15,11 @@ Desktop.ini
 node_modules/
 dist/
 build/
+
+# Local database content and generated Python/runtime artifacts
+/data/
+/kurmatravel/static/uploads/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.tsupgrader/runtime-validation/

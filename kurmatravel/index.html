@@ -6,106 +6,92 @@
 <title>Kurma Travel - Umrah & Haji</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="stylesheet" href="static/css/home.css">
+<link rel="stylesheet" href="static/css/site-nav.css">
+<link rel="stylesheet" href="static/css/site-theme.css">
+<script src="static/js/site-nav.js" defer></script>
+<script src="static/js/site-components.js" defer></script>
 </head>
 <body>
 
-<!-- NAVBAR -->
-<header class="navbar">
-<div class="container nav-flex">
-
-<div class="hamburger" id="hamburger">
-    ☰
-    <span class="menu-text">MENU</span>
-</div>
-
-
-<div class="logo">
-<img src="static/images/logo.png">
-<span>KURMA TRAVEL</span>
-</div>
-
-<nav id="navMenu">
-<a href="index.html" class="active">Home</a>
-<a href="paket.html">Paket Umroh & Haji</a>
-<a href="galeri.html">Galeri</a>
-<a href="staf.html">Staf</a>
-<a href="kontak.html">Kontak</a>
-</nav>
-
-<a class="btn-wa"
-onclick="openWA('Halo Kurma Travel, saya mau konsultasi paket umrah/haji yang tersedia')">
-Chat WhatsApp
-</a>
-
-</div>
-</header>
+<div id="siteNavigation"></div>
 
 <!-- HERO -->
-<section class="hero"
-style="background-image:url('static/images/hero.jpg');">
+<section class="hero kt-page-hero kt-page-hero--home" style="background-image:url('static/images/hero.jpg');">
+  <div class="overlay"></div>
 
-<div class="overlay"></div>
+  <div class="container hero-content">
+    <div class="hero-badge">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 2.75a1.5 1.5 0 0 1 1.43 1.04l.72 2.24 2.3.5a1.5 1.5 0 0 1 .84 2.57l-1.74 1.48.4 2.3a1.5 1.5 0 0 1-2.18 1.58L12 1.35l-1.77 9.25a1.5 1.5 0 0 1-2.18-1.58l.4-2.3L6.7 8.1a1.5 1.5 0 0 1 .84-2.57l2.3-.5.72-2.24A1.5 1.5 0 0 1 12 2.75zm0 6.35l-.75 2.31h1.5L12 9.1zm-3 4.54l.48 1.48 1.48-.48-1.48-.48L9 13.64zm6-.1l-.48 1.48-1.48-.48 1.48-.48.48-.52zm-2.96 3.12l.7 2.17 1.26-1.43-.7-2.17-1.26 1.43zm-2.56-2.56l.7 2.17 1.25-1.43-.69-2.17-1.26 1.43zm6.18-1.13l-.7 2.17 1.26 1.43.7-2.17-1.26-1.43z"/>
+      </svg>
+      <span>Travel Umrah &amp; Haji Terpercaya</span>
+    </div>
 
-<div class="container hero-content">
+    <h1>Selamat Datang<br>di Kurma Travel</h1>
+    <p>Mitra terpercaya untuk perjalanan Umrah, Haji dan Muslim Trip Anda.</p>
 
-<h1>Selamat Datang di Kurma Travel</h1>
-<p>Mitra terpercaya untuk perjalanan Umrah, Haji dan Muslim Trip Anda.</p>
+    <div class="hero-feature-grid">
+      <div class="feature-item">
+        <span class="feature-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 1.5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 12 1.5zm5.8 8.16L11.5 16.9a1 1 0 0 1-1.42 0L6.5 13.06a1 1 0 0 1 1.42-1.42l2.83 2.83 5.64-5.64a1 1 0 1 1 1.41 1.41z"/></svg>
+        </span>
+        <span>Amanah &amp;<br>Terpercaya</span>
+      </div>
+      <div class="feature-item">
+        <span class="feature-icon service-icon">
+          <svg viewBox="0 0 24 24"><path d="M20.2 5.7a1.1 1.1 0 0 1 1.1 1.1v8.4a1.1 1.1 0 0 1-1.1 1.1h-1.3v2.6a1.1 1.1 0 0 1-1.1 1.1H6.2a1.1 1.1 0 0 1-1.1-1.1v-2.6H3.8A1.1 1.1 0 0 1 2.7 15.2V6.8a1.1 1.1 0 0 1 1.1-1.1h1.3V3.1A1.1 1.1 0 0 1 6.2 2h11.6a1.1 1.1 0 0 1 1.1 1.1v2.6zm-5.7 1.8H9.5v7.2h4.9V7.5zm-1.8 3.1v1.7H11v-1.7z"/></svg>
+        </span>
+        <span>Layanan<br>Profesional</span>
+      </div>
+      <div class="feature-item">
+        <span class="feature-icon">
+          <svg viewBox="0 0 24 24"><path d="M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm-8 2a3 3 0 0 0-3 3v1a1 1 0 0 0 1 1h10v-2a4 4 0 0 0-4-4zM14 13c2.76 0 5 2.24 5 5v1H19v-1a3 3 0 0 0-3-3h-2.5a5.61 5.61 0 0 1 .5 2v2H8v-1a3 3 0 0 1 3-3zm3.5-6.5a2.5 2.5 0 1 1-2.5 2.5 2.5 2.5 0 0 1 2.5-2.5zm-6.5 2a2.5 2.5 0 1 1-2.5 2.5 2.5 2.5 0 0 1 2.5-2.5z"/></svg>
+        </span>
+        <span>Pendamping<br>Berpengalaman</span>
+      </div>
+    </div>
 
-<div class="hero-btn">
-<a href="paket.html" class="btn-primary">Lihat Paket</a>
+    <div class="hero-btn">
+      <a href="paket.html" class="btn-primary btn-with-icon">
+        <span class="btn-icon">
+          <svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v13A2.5 2.5 0 0 1 17.5 21h-11A2.5 2.5 0 0 1 4 18.5zm4.5 1.5v10h7v-10zm2 2h3v1h-3zm0 3h3v1h-3z"/></svg>
+        </span>
+        <span>Lihat Paket</span>
+      </a>
 
-<a onclick="openWA('Halo Kurma Travel, saya mau konsultasi paket umrah/haji yang tersedia')" 
-class="btn-outline">
-Konsultasi
-</a>
+      <a href="https://wa.me/6281280803429?text=Halo%20Kurma%20Travel%2C%20saya%20mau%20konsultasi%20paket%20umrah%2Fhaji%20yang%20tersedia" target="_blank" rel="noopener noreferrer" onclick="event.preventDefault(); openWA('Halo Kurma Travel, saya mau konsultasi paket umrah/haji yang tersedia')" class="btn-outline btn-with-icon">
+        <span class="btn-icon">
+          <svg viewBox="0 0 24 24"><path d="M6.5 4A2.5 2.5 0 0 0 4 6.5v7A2.5 2.5 0 0 0 6.5 16H8l2.5 3.5L13 16h4.5A2.5 2.5 0 0 0 20 13.5v-7A2.5 2.5 0 0 0 17.5 4zm1.8 4.8h8.4v1.4H8.3zm0 3h6.4v1.4H8.3z"/></svg>
+        </span>
+        <span>Konsultasi</span>
+      </a>
 
-<a href="artikel.html" class="btn-primary">
-Artikel & Informasi
-</a>
-</div>
+      <a href="artikel.html" class="btn-secondary btn-with-icon">
+        <span class="btn-icon">
+          <svg viewBox="0 0 24 24"><path d="M5 3.5A2.5 2.5 0 0 0 2.5 6v12A2.5 2.5 0 0 0 5 20.5h14A2.5 2.5 0 0 0 21.5 18V7A2.5 2.5 0 0 0 19 4.5H7a2 2 0 0 0-2 2zm2 2h10v2H7zm0 5h10v2H7zm0 5h6v2H7z"/></svg>
+        </span>
+        <span>Artikel &amp; Informasi</span>
+      </a>
+    </div>
 
-
-
-<!-- SOSIAL MEDIA -->
-<div class="follow-text">Follow Us On:</div>
-
-<div class="hero-social">
-
-<div class="hero-social">
-  
-
-<!-- YOUTUBE -->
-<a href="https://youtube.com/@kurmatravel?si=Sw9kC5tV5JWmj6k6" target="_blank" class="social yt">
-<svg viewBox="0 0 24 24">
-<path d="M23.5 6.2s-.2-1.7-.9-2.4c-.9-.9-1.9-.9-2.4-1C16.8 2.5 12 2.5 12 2.5s-4.8 0-8.2.3c-.5.1-1.5.1-2.4 1C.7 4.5.5 6.2.5 6.2S.2 8.2.2 10.1v1.8c0 1.9.3 3.9.3 3.9s.2 1.7.9 2.4c.9.9 2.1.9 2.6 1 1.9.2 8 .3 8 .3s4.8 0 8.2-.3c.5-.1 1.5-.1 2.4-1 .7-.7.9-2.4.9-2.4s.3-2 .3-3.9v-1.8c0-1.9-.3-3.9-.3-3.9zM9.7 14.6V7.9l6.2 3.4-6.2 3.3z"/>
-</svg>
-</a>
-
-<!-- FACEBOOK -->
-<a href="https://www.facebook.com/share/1ZYG4z8kMq/" target="_blank" class="social fb">
-<svg viewBox="0 0 24 24">
-<path d="M22 12a10 10 0 1 0-11.6 9.9v-7h-2.3V12h2.3V9.8c0-2.3 1.4-3.6 3.5-3.6 1 0 2 .1 2 .1v2.2h-1.1c-1.1 0-1.4.7-1.4 1.3V12h2.4l-.4 2.9h-2v7A10 10 0 0 0 22 12"/>
-</svg>
-</a>
-
-<!-- INSTAGRAM -->
-<a href="https://www.instagram.com/kurma_travel" target="_blank" class="social ig">
-<svg viewBox="0 0 24 24">
-<path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm10 2H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3zm-5 3a5 5 0 1 1 0 10a5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6a3 3 0 0 0 0-6zm5.2-2.1a1.1 1.1 0 1 1-2.2 0a1.1 1.1 0 0 1 2.2 0z"/>
-</svg>
-</a>
-
-<!-- TIKTOK -->
-<a href="https://www.tiktok.com/@kurmatravelpusat" target="_blank" class="social tt">
-<svg viewBox="0 0 24 24">
-<path d="M12.6 2h3.1c.2 1.4 1 2.7 2.2 3.5 1 .7 2.1 1.1 3.3 1.2v3.1c-1.7 0-3.3-.5-4.7-1.4v7.2a6.2 6.2 0 1 1-6.2-6.2c.4 0 .8 0 1.1.1v3.2a2.9 2.9 0 1 0 2 2.8V2z"/>
-</svg>
-</a>
-
-</div>
-
-</div>
-</div>
+    <div class="follow-wrap">
+      <span class="follow-label">Follow Us On:</span>
+      <div class="hero-social" aria-label="Media sosial Kurma Travel">
+        <a href="https://youtube.com/@kurmatravel?si=Sw9kC5tV5JWmj6k6" target="_blank" rel="noopener noreferrer" class="social yt" aria-label="YouTube Kurma Travel">
+          <svg viewBox="0 0 24 24"><path d="M23.5 6.2s-.2-1.7-.9-2.4c-.9-.9-1.9-.9-2.4-1C16.8 2.5 12 2.5 12 2.5s-4.8 0-8.2.3c-.5.1-1.5.1-2.4 1C.7 4.5.5 6.2.5 6.2S.2 8.2.2 10.1v1.8c0 1.9.3 3.9.3 3.9s.2 1.7.9 2.4c.9.9 2.1.9 2.6 1 1.9.2 8 .3 8 .3s4.8 0 8.2-.3c.5-.1 1.5-.1 2.4-1 .7-.7.9-2.4.9-2.4s.3-2 .3-3.9v-1.8c0-1.9-.3-3.9-.3-3.9zM9.7 14.6V7.9l6.2 3.4-6.2 3.3z"/></svg>
+        </a>
+        <a href="https://www.facebook.com/share/1ZYG4z8kMq/" target="_blank" rel="noopener noreferrer" class="social fb" aria-label="Facebook Kurma Travel">
+          <svg viewBox="0 0 24 24"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7h-2.3V12h2.3V9.8c0-2.3 1.4-3.6 3.5-3.6 1 0 2 .1 2 .1v2.2h-1.1c-1.1 0-1.4.7-1.4 1.3V12h2.4l-.4 2.9h-2v7A10 10 0 0 0 22 12"/></svg>
+        </a>
+        <a href="https://www.instagram.com/kurma_travel" target="_blank" rel="noopener noreferrer" class="social ig" aria-label="Instagram Kurma Travel">
+          <svg viewBox="0 0 24 24"><path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm10 2H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3zm-5 3a5 5 0 1 1 0 10a5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6a3 3 0 0 0 0-6zm5.2-2.1a1.1 1.1 0 1 1-2.2 0a1.1 1.1 0 0 1 2.2 0z"/></svg>
+        </a>
+        <a href="https://www.tiktok.com/@kurmatravelpusat" target="_blank" rel="noopener noreferrer" class="social tt" aria-label="TikTok Kurma Travel">
+          <svg viewBox="0 0 24 24"><path d="M12.6 2h3.1c.2 1.4 1 2.7 2.2 3.5 1 .7 2.1 1.1 3.3 1.2v3.1c-1.7 0-3.3-.5-4.7-1.4v7.2a6.2 6.2 0 1 1-6.2-6.2c.4 0 .8 0 1.1.1v3.2a2.9 2.9 0 1 0 2 2.8V2z"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- =========================================
@@ -636,8 +622,9 @@ document.addEventListener("keydown", function (event) {
                 <p>Hubungi tim Kurma Travel untuk mendapatkan informasi paket.</p>
             </div>
 
-            <a href="javascript:void(0)"
-               onclick="openWA('Halo Kurma Travel, saya ingin bertanya tentang fasilitas dan paket Umrah/Haji.')">
+            <a href="https://wa.me/6281280803429?text=Halo%20Kurma%20Travel%2C%20saya%20ingin%20bertanya%20tentang%20fasilitas%20dan%20paket%20Umrah%2FHaji."
+               target="_blank" rel="noopener noreferrer"
+               onclick="event.preventDefault(); openWA('Halo Kurma Travel, saya ingin bertanya tentang fasilitas dan paket Umrah/Haji.')">
                 <span>Konsultasi Sekarang</span>
                 <span aria-hidden="true">→</span>
             </a>
@@ -788,9 +775,10 @@ document.addEventListener("keydown", function (event) {
 
                 </div>
 
-                <a href="javascript:void(0)"
+                <a href="https://wa.me/6281280803429?text=Halo%20Kurma%20Travel%2C%20saya%20ingin%20bertanya%20mengenai%20legalitas%20perusahaan%20dan%20informasi%20paket%20Umrah%2FHaji."
+                   target="_blank" rel="noopener noreferrer"
                    class="commitment-button"
-                   onclick="openWA('Halo Kurma Travel, saya ingin bertanya mengenai legalitas perusahaan dan informasi paket Umrah/Haji.')">
+                   onclick="event.preventDefault(); openWA('Halo Kurma Travel, saya ingin bertanya mengenai legalitas perusahaan dan informasi paket Umrah/Haji.')">
                     Tanyakan Informasi
                     <span>→</span>
                 </a>
@@ -812,22 +800,24 @@ document.addEventListener("keydown", function (event) {
 </section>
 
 
-<footer>© 2026 Kurma Travel</footer>
+<div id="siteFooter"></div>
 
 <!-- MODAL WA -->
-<div id="waModal" class="wa-modal">
+<div id="waModal" class="wa-modal" aria-hidden="true">
 <div class="wa-box">
 <h3>Pilih Admin WhatsApp</h3>
-<a id="wa1" target="_blank">Chat WA 1</a>
-<a id="wa2" target="_blank">Chat WA 2</a>
-<a id="wa3" target="_blank">Chat WA 3</a>
-<button onclick="closeWA()">Tutup</button>
+<a id="wa1" href="https://wa.me/6281280803429" target="_blank" rel="noopener noreferrer">Chat Admin 1 · 0812-8080-3429</a>
+<a id="wa2" href="https://wa.me/6283875613645" target="_blank" rel="noopener noreferrer">Chat Admin 2 · 0838-7561-3645</a>
+<a id="wa3" href="https://wa.me/6287776042572" target="_blank" rel="noopener noreferrer">Chat Admin 3 · 0877-7604-2572</a>
+<button type="button" onclick="closeWA()">Tutup</button>
 </div>
 </div>
 
 <!-- FLOATING WA -->
-<div class="wa-float" id="waFloat"
-onclick="openWA('Halo Kurma Travel, saya mau konsultasi terkait paket umrah/haji yang tersedia')">
+<a class="kt-whatsapp-float" id="waFloat"
+   href="https://wa.me/6281280803429?text=Assalamu%27alaikum%2C%20saya%20ingin%20mendapatkan%20informasi%20mengenai%20paket%20perjalanan%20Kurma%20Travel."
+   target="_blank" rel="noopener noreferrer"
+   aria-label="Hubungi Kurma Travel melalui WhatsApp">
 
 <!-- WHATSAPP ICON -->
 <svg viewBox="0 0 32 32" width="26" height="26" fill="white">
@@ -865,7 +855,7 @@ c-.3-.1-1.8-.9-2.1-1
 -.1-.1-.3-.2-.6-.3z"/>
 </svg>
 
-</div>
+</a>
 
 <!-- LIGHTBOX -->
 <div id="lightbox" class="lightbox" onclick="closeLightbox()">
@@ -873,24 +863,6 @@ c-.3-.1-1.8-.9-2.1-1
 </div>
 
 <!-- SCRIPT -->
-
-<script>
-const WA1="6281280803429";
-const WA2="6283875613645";
-const WA3="6287776042572";
-
-function openWA(text){
-let msg=encodeURIComponent(text);
-wa1.href="https://wa.me/"+WA1+"?text="+msg;
-wa2.href="https://wa.me/"+WA2+"?text="+msg;
-wa3.href="https://wa.me/"+WA3+"?text="+msg;
-waModal.style.display="flex";
-}
-function closeWA(){
-waModal.style.display="none";
-}
-</script>
-
 
 <script>
 const slidesGallery = document.querySelector(".slides");
@@ -939,20 +911,6 @@ document.addEventListener("keydown", function (event) {
 });
 </script>
 
-
-<script>
-const hamburger=document.getElementById("hamburger");
-const navMenu=document.getElementById("navMenu");
-hamburger.onclick=()=>navMenu.classList.toggle("show");
-</script>
-
-<script>
-const waFloat=document.getElementById("waFloat");
-window.addEventListener("scroll",()=>{
-if(window.scrollY>300) waFloat.classList.add("show");
-else waFloat.classList.remove("show");
-});
-</script>
 
 <script>
 document.addEventListener("DOMContentLoaded",function(){

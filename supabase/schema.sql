@@ -5,11 +5,15 @@
     payload jsonb not null default '{}'::jsonb,
     hidden boolean not null default false,
     deleted_at timestamptz,
+    archived_by text,
     primary key (section, id),
     constraint valid_section check (
       section in ('packages', 'gallery', 'articles', 'information', 'staff', 'contacts')
     )
   );
+
+  alter table public.content_items
+    add column if not exists archived_by text;
 
   create index if not exists content_items_public_idx
     on public.content_items (section, deleted_at, position);

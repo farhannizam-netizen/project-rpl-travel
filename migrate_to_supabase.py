@@ -1,3 +1,5 @@
+import argparse
+import hashlib
 import os
 from pathlib import Path
 
@@ -24,7 +26,31 @@ DEFAULT_THEME = {
 }
 
 
+def load_local_content(db_file=DB_FILE, json_file=JSON_FILE):
+    if db_file.exists():
+        database.initialize_database(db_file, json_file, lambda: {})
+        return database.load_content(
+            db_file,
+            DEFAULT_THEME,
+            include_archived=True,
+            include_hidden=True,
+        ), "SQLite"
+    if json_file.exists():
+        import json
+
+        return json.loads(json_file.read_text(encoding="utf-8")), "JSON"
+    raise SystemExit("Tidak ada data SQLite atau JSON untuk dimigrasikan.")
+
+
 def main():
+    parser = argparse.ArgumentParser(description="Import local CMS data into Supabase without replacing remote rows.")
+    parser.add_argument(
+        "--apply",
+        action="store_true",
+        help="Insert local records whose (section, id) do not already exist. Default is dry-run.",
+    )
+    args = parser.parse_args()
+
     supabase_url = os.environ.get("SUPABASE_URL", "").strip()
     service_role_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
     if not supabase_url or not service_role_key:
@@ -34,16 +60,7 @@ def main():
 
     upload_dir = BASE_DIR / "kurmatravel" / "static" / "uploads"
 
-    if DB_FILE.exists():
-        content = database.load_content(DB_FILE, DEFAULT_THEME)
-        source = "SQLite"
-    elif JSON_FILE.exists():
-        import json
-
-        content = json.loads(JSON_FILE.read_text(encoding="utf-8"))
-        source = "JSON"
-    else:
-        raise SystemExit("Tidak ada data SQLite atau JSON untuk dimigrasikan.")
+    content, source = load_local_content()
 
     supabase_database.initialize_supabase(supabase_url, service_role_key, DEFAULT_THEME)
 
@@ -56,9 +73,13 @@ def main():
             return value
 
         filename = value.rsplit("/static/uploads/", 1)[-1].split("?", 1)[0]
+        filename = Path(filename.replace("\\", "/")).name
         local_file = upload_dir / filename
         if not local_file.is_file():
-            return value
+            raise FileNotFoundError(
+                f"File upload lokal yang dibutuhkan konten baru tidak ditemukan: {filename}"
+            )
+        file_bytes = local_file.read_bytes()
         extension = local_file.suffix.lower()
         content_types = {
             ".jpg": "image/jpeg",
@@ -71,19 +92,26 @@ def main():
         return supabase_storage.upload_public_file(
             supabase_url,
             service_role_key,
-            filename,
-            local_file.read_bytes(),
+            f"imports/{hashlib.sha256(file_bytes).hexdigest()[:24]}/{filename}",
+            file_bytes,
             content_types.get(extension, "application/octet-stream"),
         )
 
-    content = migrate_upload_urls(content)
-    supabase_database.replace_content(
+    result = supabase_database.merge_missing_content(
         supabase_url,
         service_role_key,
         content,
         DEFAULT_THEME,
+        apply=args.apply,
+        transform_item=migrate_upload_urls if args.apply else None,
     )
-    print(f"Migrasi selesai dari {source}. Database Supabase sudah berisi data CMS.")
+    action = "ditambahkan" if args.apply else "akan ditambahkan"
+    print(f"Sumber data lokal: {source}")
+    print(f"Konten {action}: {result['items_inserted']}")
+    print(f"Konten lokal dilewati karena ID sudah ada: {result['items_skipped']}")
+    print(f"Kunci tema baru {action}: {result['theme_keys_inserted']}")
+    if not args.apply:
+        print("Dry run: Supabase belum diubah. Jalankan dengan --apply untuk menerapkan merge aman.")
 
 
 if __name__ == "__main__":

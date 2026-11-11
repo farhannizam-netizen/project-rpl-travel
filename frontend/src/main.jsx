@@ -5,6 +5,8 @@ import "./admin.css";
 
 const PUBLIC_CONTENT_CACHE_KEY = "kurma-travel:public-content:v1";
 const PAGE_CACHE_PREFIX = "kurma-travel:page:v1:";
+const ARCHIVABLE_SECTIONS = new Set(["packages", "gallery", "articles", "information", "staff"]);
+const VISIBILITY_SECTIONS = new Set(["packages", "gallery", "staff", "contacts"]);
 
 function readLocalCache(key) {
   try {
@@ -21,6 +23,21 @@ function writeLocalCache(key, value) {
   } catch {
     // The network response remains usable if browser storage is unavailable or full.
   }
+}
+
+function removeLocalCache(key) {
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // The page can still render the network response if browser storage is unavailable.
+  }
+}
+
+function writePublicContentCache(content) {
+  const publicContent = { ...content };
+  delete publicContent.archives;
+  delete publicContent.gallery_trash;
+  writeLocalCache(PUBLIC_CONTENT_CACHE_KEY, publicContent);
 }
 
 function sameContent(left, right) {
@@ -86,6 +103,16 @@ function LegacyPage() {
 
     fetch(`/api/page/${encodeURIComponent(page)}`)
       .then((response) => {
+        if (response.status === 404) {
+          removeLocalCache(pageCacheKey);
+          if (active) {
+            setPageStyles([]);
+            setHtml("");
+          }
+          const error = new Error("Halaman tidak ditemukan");
+          error.code = "PAGE_NOT_FOUND";
+          throw error;
+        }
         if (!response.ok) throw new Error("Halaman tidak ditemukan");
         return response.json();
       })
@@ -106,7 +133,7 @@ function LegacyPage() {
       })
       .catch(async (reason) => {
         if (!active) return;
-        if (cachedPage?.html) return;
+        if (cachedPage?.html && reason.code !== "PAGE_NOT_FOUND") return;
         try {
           const currentRoute = location.pathname.replace(/\/+$/, "").replace(/\.html$/, "");
           const contentResponse = await fetch("/api/content", { cache: "no-store" });
@@ -249,18 +276,46 @@ function LegacyPage() {
       window.document.head.appendChild(cssLink);
     }
     const cssHref = new URL(cssPath, window.location.href).href;
-    const stylesheetReady = cssLink.href === cssHref && cssLink.sheet
+    const baseStylesReady = cssLink.href === cssHref && cssLink.sheet
       ? Promise.resolve()
       : new Promise((resolve) => {
           cssLink.addEventListener("load", resolve, { once: true });
           cssLink.addEventListener("error", resolve, { once: true });
         });
     cssLink.href = cssPath;
+    const sharedStylesReady = [
+      ["/static/css/site-nav.css", "legacy-site-nav-css"],
+      ["/static/css/site-theme.css", "legacy-site-theme-css"],
+    ].map(([href, id]) => {
+      let link = window.document.getElementById(id);
+      if (!link) {
+        link = window.document.createElement("link");
+        link.id = id;
+        link.rel = "stylesheet";
+        window.document.head.appendChild(link);
+      }
+      const target = new URL(href, window.location.href).href;
+      if (link.href === target && link.sheet) return Promise.resolve();
+      const ready = new Promise((resolve) => {
+        link.addEventListener("load", resolve, { once: true });
+        link.addEventListener("error", resolve, { once: true });
+      });
+      link.href = href;
+      return ready;
+    });
+    const stylesheetReady = Promise.all([baseStylesReady, ...sharedStylesReady]);
 
     const body = window.document.querySelector(".legacy-page");
     if (body) {
       const cleanup = [];
       let renderHomeGalleryItems;
+      const legacyNavigate = (path) => navigate(path);
+      window.ktLegacyNavigate = legacyNavigate;
+      cleanup.push(() => {
+        if (window.ktLegacyNavigate === legacyNavigate) {
+          delete window.ktLegacyNavigate;
+        }
+      });
       const posterModal = body.querySelector("#posterModal");
       const posterImage = body.querySelector("#posterModalImage");
       if (posterModal && posterImage) {
@@ -365,32 +420,6 @@ function LegacyPage() {
         });
       }
 
-      if (!body.querySelector("#waFloat")) {
-        const floatButton = window.document.createElement("div");
-        floatButton.id = "waFloat";
-        floatButton.className = "wa-float show";
-        floatButton.setAttribute("role", "button");
-        floatButton.setAttribute("tabindex", "0");
-        floatButton.setAttribute("aria-label", "Chat WhatsApp");
-        floatButton.innerHTML = `
-          <span class="wa-tooltip"></span>
-          <svg viewBox="0 0 32 32" width="30" height="30" fill="white" aria-hidden="true">
-            <path d="M16 2.9C8.8 2.9 2.9 8.8 2.9 16c0 2.3.6 4.5 1.8 6.5L3 29l6.7-1.7A13 13 0 1 0 16 2.9zm0 23.7c-2.1 0-4.1-.6-5.9-1.7l-.4-.2-3.9 1 1-3.8-.2-.4A10.9 10.9 0 1 1 16 26.6zm6.1-8.1c-.3-.1-1.8-.9-2.1-1-.3-.1-.5-.1-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-.3-.1-1.3-.5-2.4-1.6-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.4.1-.1.2-.3.3-.5.1-.2 0-.4-.1-.6-.1-.1-.7-1.7-.9-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.8 0 1.7 1.2 3.3 1.4 3.5.2.2 2.4 3.7 5.8 5 3.4 1.3 3.4.9 4 .8.6-.1 1.8-.7 2.1-1.4.3-.7.3-1.3.2-1.4-.1-.1-.3-.2-.6-.3z"/>
-          </svg>`;
-        const openConsultation = () => window.openWA?.(
-          "Halo Kurma Travel, saya mau konsultasi terkait paket umrah/haji yang tersedia"
-        );
-        floatButton.addEventListener("click", openConsultation);
-        floatButton.addEventListener("keydown", (event) => {
-          if (event.key === "Enter" || event.key === " ") openConsultation();
-        });
-        cleanup.push(() => {
-          floatButton.removeEventListener("click", openConsultation);
-        });
-        body.appendChild(floatButton);
-      } else {
-        body.querySelector("#waFloat")?.classList.add("show");
-      }
       body.querySelectorAll("a[href], [onclick]").forEach((node) => {
         if (node.matches("a[href]")) {
           const href = node.getAttribute("href");
@@ -413,7 +442,7 @@ function LegacyPage() {
           const messageMatch = inlineClick.match(/openWA\(['"`](.*?)['"`]\)/);
           const message = messageMatch?.[1] || "Halo Kurma Travel, saya mau konsultasi";
           const handler = (event) => {
-            event.prevent?.();
+            event.preventDefault();
             window.openWA?.(message);
           };
           node.addEventListener("click", handler);
@@ -623,7 +652,7 @@ function LegacyPage() {
             );
             const hasGalleryRecords = content.gallery.some(
               (item) => item.image && !item.deleted_at
-            );
+            ) || content.visibility?.gallery?.active > 0;
             if (galleryItems.length > 0) {
               renderHomeGalleryItems?.(galleryItems);
             } else if (hasGalleryRecords) {
@@ -642,7 +671,7 @@ function LegacyPage() {
               : body.querySelector(".package-grid");
             const isHome = location.pathname === "/" || location.pathname === "/index.html";
             if (grid) grid.replaceChildren();
-            content.packages.forEach((item) => {
+            content.packages.filter((item) => !item.hidden && !item.deleted_at).forEach((item) => {
               const card = window.document.createElement("article");
               card.className = isHome ? "home-package-card" : "travel-card";
               if (!isHome && (item.badge || "").toUpperCase().includes("RAMADHAN")) {
@@ -674,7 +703,47 @@ function LegacyPage() {
               description.className = isHome ? "home-package-description" : "travel-description";
               description.textContent = item.description || "";
               cardContent.append(category, title, description);
-              if (!isHome) {
+              if (isHome) {
+                const info = window.document.createElement("ul");
+                info.className = "home-package-info";
+                [
+                  `📅 ${item.period || "Periode keberangkatan"}`,
+                  `🕌 ${item.duration || "Durasi perjalanan"}`,
+                  `🕋 ${item.program || "Perjalanan ibadah Umrah"}`,
+                ].forEach((text) => {
+                  const entry = window.document.createElement("li");
+                  entry.textContent = text;
+                  info.appendChild(entry);
+                });
+
+                const price = window.document.createElement("div");
+                price.className = "home-package-price";
+                const priceLabel = window.document.createElement("span");
+                priceLabel.textContent = item.price || "Informasi harga";
+                const priceDetails = window.document.createElement("strong");
+                priceDetails.textContent = item.detail || item.price || "Lihat Detail / Hubungi Kami";
+                price.append(priceLabel, priceDetails);
+
+                const actions = window.document.createElement("div");
+                actions.className = "home-package-actions";
+                if (item.image) {
+                  const detail = window.document.createElement("button");
+                  detail.type = "button";
+                  detail.className = "home-detail-btn";
+                  detail.innerHTML = "Lihat Detail <span>↗</span>";
+                  detail.addEventListener("click", () => window.openHomePoster?.(item.image));
+                  actions.appendChild(detail);
+                }
+                const ask = window.document.createElement("button");
+                ask.type = "button";
+                ask.className = "home-register-btn";
+                ask.innerHTML = "Tanya Paket <span>↗</span>";
+                ask.addEventListener("click", () =>
+                  window.openWA?.(`Saya ingin bertanya tentang Paket ${item.title || ""}`.trim())
+                );
+                actions.appendChild(ask);
+                cardContent.append(info, price, actions);
+              } else {
                 const info = window.document.createElement("div");
                 info.className = "travel-info";
                 [
@@ -723,7 +792,8 @@ function LegacyPage() {
             const grid = body.querySelector(".gallery-grid");
             if (grid) grid.replaceChildren();
             const visibleGallery = content.gallery.filter((item) => item.image && !item.hidden && !item.deleted_at);
-            const hasGalleryRecords = content.gallery.some((item) => item.image && !item.deleted_at);
+            const hasGalleryRecords = content.gallery.some((item) => item.image && !item.deleted_at)
+              || content.visibility?.gallery?.active > 0;
             const galleryItems = hasGalleryRecords
               ? visibleGallery
               : Array.from({ length: 224 }, (_, index) => ({
@@ -761,6 +831,7 @@ function LegacyPage() {
             if (grid) {
               grid.replaceChildren();
               const equipmentItem = content.information?.find((item) =>
+                !item.hidden && !item.deleted_at &&
                 String(item.url || "").replace(/\/+$/, "").replace(/\.html$/, "") === "/perlengkapan"
               );
               const existingFeatureGrid = body.querySelector("#equipment-feature-grid");
@@ -891,9 +962,11 @@ function LegacyPage() {
             const grid = body.querySelector(".staff-grid-4");
             if (grid) grid.replaceChildren();
             const directorCard = body.querySelector(".staff-center .staff-card");
-            const director = content.staff.find((item) =>
+            const visibleStaff = content.staff.filter((item) => !item.hidden && !item.deleted_at);
+            const director = visibleStaff.find((item) =>
               /direktur/i.test(`${item.category || ""} ${item.title || ""}`)
             );
+            if (!director && content.visibility?.staff?.active > 0) directorCard?.remove();
             if (directorCard && director) {
               const directorImage = directorCard.querySelector("img");
               const directorLabel = directorCard.querySelector(".staff-label");
@@ -908,7 +981,7 @@ function LegacyPage() {
                 directorLabel.appendChild(directorRole);
               }
             }
-            const staffMembers = orderedStaff(content.staff).filter((item) =>
+            const staffMembers = orderedStaff(visibleStaff).filter((item) =>
               !/direktur/i.test(`${item.category || ""} ${item.title || ""}`)
             );
             staffMembers.forEach((item) => {
@@ -931,19 +1004,7 @@ function LegacyPage() {
           if (location.pathname === "/kontak" || location.pathname === "/kontak.html") {
             const grid = body.querySelector(".contact-grid");
             if (grid) grid.replaceChildren();
-            const whatsappContacts = content.contacts.filter((item) =>
-              (item.category || "").toLowerCase().includes("whatsapp")
-            );
-            const addressContacts = content.contacts.filter((item) =>
-              (item.category || "").toLowerCase().includes("alamat") ||
-              (item.category || "").toLowerCase().includes("address")
-            );
-            const emailContacts = content.contacts.filter((item) =>
-              (item.category || "").toLowerCase().includes("email")
-            );
-            const otherContacts = content.contacts.filter((item) =>
-              !whatsappContacts.includes(item) && !addressContacts.includes(item) && !emailContacts.includes(item)
-            );
+            const visibleContacts = content.contacts.filter((item) => !item.hidden && !item.deleted_at);
 
             const createContactCard = (category, icon, items, actionLabel) => {
               const card = window.document.createElement("div");
@@ -997,10 +1058,36 @@ function LegacyPage() {
               grid?.appendChild(card);
             };
 
-            if (whatsappContacts.length) createContactCard("WhatsApp", "📱", whatsappContacts);
-            if (addressContacts.length) createContactCard("Alamat Kantor Pusat", "📍", addressContacts, "📍 Buka Maps");
-            if (emailContacts.length) createContactCard("Email", "✉️", emailContacts, "✉️ Kirim Email");
-            otherContacts.forEach((item) => createContactCard(item.category || "Kontak", "📞", [item]));
+            const contactGroups = [];
+            visibleContacts.forEach((item) => {
+              const label = item.category || "Kontak";
+              const normalizedLabel = label.toLowerCase();
+              const isWhatsapp = normalizedLabel.includes("whatsapp");
+              const isAddress = normalizedLabel.includes("alamat") || normalizedLabel.includes("address");
+              const isEmail = normalizedLabel.includes("email");
+              const groupKey = isWhatsapp
+                ? "whatsapp"
+                : isAddress
+                  ? "address"
+                  : isEmail
+                    ? "email"
+                    : `contact:${item.id}`;
+              let group = contactGroups.find((candidate) => candidate.key === groupKey);
+              if (!group) {
+                group = {
+                  key: groupKey,
+                  category: isWhatsapp ? "WhatsApp" : isAddress ? "Alamat Kantor Pusat" : label,
+                  icon: isWhatsapp ? "📱" : isAddress ? "📍" : isEmail ? "✉️" : "📞",
+                  actionLabel: isAddress ? "📍 Buka Maps" : isEmail ? "✉️ Kirim Email" : undefined,
+                  items: [],
+                };
+                contactGroups.push(group);
+              }
+              group.items.push(item);
+            });
+            contactGroups.forEach((group) =>
+              createContactCard(group.category, group.icon, group.items, group.actionLabel)
+            );
           }
 
           if (location.pathname === "/artikel" || location.pathname === "/artikel.html") {
@@ -1008,7 +1095,7 @@ function LegacyPage() {
             const infoList = body.querySelectorAll(".artikel-list")[1];
             articleList?.querySelectorAll(":scope > a").forEach((link) => link.remove());
             infoList?.querySelectorAll(":scope > a").forEach((link) => link.remove());
-            content.articles.forEach((item) => {
+            content.articles.filter((item) => !item.hidden && !item.deleted_at).forEach((item) => {
               const link = window.document.createElement("a");
               link.href = item.url || "#";
               link.textContent = item.title || "Artikel baru";
@@ -1022,7 +1109,7 @@ function LegacyPage() {
               if (item.description) link.title = item.description;
               articleList?.appendChild(link);
             });
-            content.information.forEach((item) => {
+            content.information.filter((item) => !item.hidden && !item.deleted_at).forEach((item) => {
               const link = window.document.createElement("a");
               link.href = item.url || "#";
               link.textContent = item.title || "Informasi baru";
@@ -1038,7 +1125,8 @@ function LegacyPage() {
             });
           }
 
-          const detailItems = [...content.articles, ...content.information];
+          const detailItems = [...content.articles, ...content.information]
+            .filter((item) => !item.hidden && !item.deleted_at);
           const detailItem = detailItems.find((item) => {
             const itemRoute = (item.url || "").replace(/\/$/, "").replace(/\.html$/, "").replace(/^\/+/, "/");
             const currentRoute = location.pathname.replace(/\/$/, "").replace(/\.html$/, "");
@@ -1109,6 +1197,26 @@ function LegacyPage() {
       body.querySelectorAll("script").forEach((originalScript) => {
         originalScript.remove();
       });
+      const sharedScripts = [
+        "/static/js/site-nav.js",
+        "/static/js/site-components.js",
+      ];
+      const sharedScriptElements = sharedScripts.map((src) => {
+        const script = window.document.createElement("script");
+        script.src = src;
+        script.async = false;
+        script.addEventListener("error", () => {
+          console.error(`Shared page script failed to load: ${src}`);
+        }, { once: true });
+        window.document.body.appendChild(script);
+        return script;
+      });
+      cleanup.push(() => {
+        window.ktSiteNavCleanup?.();
+        window.ktSiteComponentsCleanup?.();
+        window.ktGalleryCleanup?.();
+        sharedScriptElements.forEach((script) => script.remove());
+      });
 
       return () => {
         active = false;
@@ -1127,26 +1235,52 @@ function LegacyPage() {
   );
 }
 
+let waPreviousOverflow = "";
+let waReturnFocus = null;
 window.openWA = function (message) {
   const modal = document.querySelector("#waModal");
-  if (!modal) return;
+  if (!modal) {
+    console.error("Elemen modal WhatsApp #waModal tidak ditemukan.");
+    return;
+  }
 
   const numbers = ["6281280803429", "6283875613645", "6287776042572"];
-  const encoded = encodeURIComponent(message || "Halo Kurma Travel, saya mau konsultasi");
+  const encoded = encodeURIComponent(
+    message || "Halo Kurma Travel, saya ingin mendapatkan informasi."
+  );
   ["wa1", "wa2", "wa3"].forEach((id, index) => {
     const link = modal.querySelector(`#${id}`);
-    if (link) link.href = `https://wa.me/${numbers[index]}?text=${encoded}`;
+    if (!link) {
+      console.error(`Tautan admin WhatsApp #${id} tidak ditemukan.`);
+      return;
+    }
+    link.href = `https://wa.me/${numbers[index]}?text=${encoded}`;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
   });
+  waPreviousOverflow = document.body.style.overflow;
+  waReturnFocus = document.activeElement;
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-hidden", "false");
   modal.classList.add("active");
   modal.classList.add("show");
   modal.style.display = "flex";
+  document.body.style.overflow = "hidden";
+  modal.querySelector("a[href]")?.focus();
 };
 
 window.closeWA = function () {
   const modal = document.querySelector("#waModal");
+  if (!modal) return;
   modal?.classList.remove("active");
   modal?.classList.remove("show");
-  if (modal) modal.style.display = "none";
+  modal.setAttribute("aria-hidden", "true");
+  modal.style.display = "none";
+  document.body.style.overflow = waPreviousOverflow;
+  if (waReturnFocus && typeof waReturnFocus.focus === "function") {
+    waReturnFocus.focus();
+  }
 };
 
 window.openLightbox = function (source) {
@@ -1256,29 +1390,42 @@ function AdminLogin() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    let active = true;
     fetch("/api/admin/session")
       .then((response) => {
         if (response.ok) navigate("/admin", { replace: true });
       })
-      .catch(() => {});
+      .catch(() => {
+        if (active) {
+          setError("Tidak dapat memeriksa sesi admin. Periksa koneksi backend.");
+        }
+      });
+    return () => {
+      active = false;
+    };
   }, [navigate]);
 
   async function submit(event) {
     event.preventDefault();
     setLoading(true);
     setError("");
-    const response = await fetch("/api/admin/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await response.json().catch(() => ({}));
-    setLoading(false);
-    if (!response.ok) {
-      setError(data.error || "Login gagal");
-      return;
+    try {
+      const response = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setError(data.error || "Login gagal");
+        return;
+      }
+      navigate("/admin");
+    } catch {
+      setError("Tidak dapat menghubungi server autentikasi. Periksa koneksi backend.");
+    } finally {
+      setLoading(false);
     }
-    navigate("/admin");
   }
 
   return (
@@ -1290,8 +1437,8 @@ function AdminLogin() {
         </div>
         <h1>Login Admin</h1>
         <p>Kelola paket, galeri, artikel, dan informasi website.</p>
-        <label>Email
-          <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" required />
+        <label>Email atau username
+          <input type="text" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="username" autoCapitalize="none" spellCheck="false" required />
         </label>
         <label>Password
           <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required />
@@ -1320,13 +1467,15 @@ const contentLabels = {
 function AdminDashboard() {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("packages");
+  const [isNavigationOpen, setIsNavigationOpen] = useState(false);
   const [content, setContent] = useState(defaultContent());
   const [editing, setEditing] = useState(null);
   const [message, setMessage] = useState("");
-  const [galleryView, setGalleryView] = useState("active");
-  const [savingStaffOrder, setSavingStaffOrder] = useState(false);
-  const [staffOrderDirty, setStaffOrderDirty] = useState(false);
+  const [archiveView, setArchiveView] = useState("active");
+  const [savingOrder, setSavingOrder] = useState(false);
+  const [orderDirty, setOrderDirty] = useState(false);
   const editorPanelRef = useRef(null);
+  const mobileMenuButtonRef = useRef(null);
 
   function defaultContent() {
     return { packages: [], gallery: [], articles: [], information: [], staff: [], contacts: [], theme: {} };
@@ -1337,27 +1486,29 @@ function AdminDashboard() {
       const sessionResponse = await fetch("/api/admin/session");
       if (sessionResponse.status === 401) {
         navigate("/admin/login", { replace: true });
-        return;
+        return false;
       }
       if (!sessionResponse.ok) {
         setMessage(`Sesi admin gagal diperiksa (HTTP ${sessionResponse.status}).`);
-        return;
+        return false;
       }
-      const contentResponse = await fetch("/api/content");
+      const contentResponse = await fetch("/api/admin/content");
       if (!contentResponse.ok) {
         const data = await contentResponse.json().catch(() => ({}));
         setMessage(
           `${data.error || "Data dashboard gagal dimuat"} (HTTP ${contentResponse.status}). Periksa log backend.`,
         );
-        return;
+        return false;
       }
       const loadedContent = await contentResponse.json();
-      writeLocalCache(PUBLIC_CONTENT_CACHE_KEY, loadedContent);
+      writePublicContentCache(loadedContent);
       setContent(loadedContent);
-      setStaffOrderDirty(false);
+      setOrderDirty(false);
       setMessage("");
+      return true;
     } catch (error) {
       setMessage(`Data dashboard gagal dimuat: ${error.message || "periksa koneksi backend."}`);
+      return false;
     }
   }
 
@@ -1371,6 +1522,32 @@ function AdminDashboard() {
       editorPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }, [editing, activeSection]);
+
+  useEffect(() => {
+    if (!isNavigationOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event) => {
+      if (event.key !== "Escape") return;
+      setIsNavigationOpen(false);
+      mobileMenuButtonRef.current?.focus();
+    };
+    const closeOnDesktopResize = () => {
+      if (window.innerWidth > 900) setIsNavigationOpen(false);
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    window.addEventListener("resize", closeOnDesktopResize);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", closeOnEscape);
+      window.removeEventListener("resize", closeOnDesktopResize);
+    };
+  }, [isNavigationOpen]);
+
+  function closeMobileNavigation() {
+    setIsNavigationOpen(false);
+    if (window.innerWidth <= 900) mobileMenuButtonRef.current?.focus();
+  }
 
   async function logout() {
     await fetch("/api/admin/logout", { method: "POST" });
@@ -1400,6 +1577,7 @@ function AdminDashboard() {
   }
 
   async function saveItem(item) {
+    if (orderDirty && !(await saveContentOrder())) return;
     const normalizedItem = { ...item };
     if (activeSection === "staff" && normalizedItem.display_order == null) {
       normalizedItem.display_order = Math.max(
@@ -1446,115 +1624,168 @@ function AdminDashboard() {
     await loadContent();
   }
 
-  async function moveStaff(index, offset) {
-    const allStaff = orderedStaff(content.staff);
-    const directors = allStaff.filter((item) =>
-      /direktur/i.test(`${item.category || ""} ${item.title || ""}`)
-    );
-    const reordered = allStaff.filter((item) =>
-      !/direktur/i.test(`${item.category || ""} ${item.title || ""}`)
-    );
-    const targetIndex = index + offset;
-    if (targetIndex < 0 || targetIndex >= reordered.length || savingStaffOrder) return;
-    [reordered[index], reordered[targetIndex]] = [reordered[targetIndex], reordered[index]];
-    const reorderedItems = [
-      ...directors,
-      ...reordered,
-    ].map((item, order) => ({ ...item, display_order: order }));
-    setContent((current) => ({ ...current, staff: reorderedItems }));
-    setStaffOrderDirty(true);
+  function moveContentItem(itemId, offset, scopedItems) {
+    if (savingOrder) return;
+    const allItems = activeSection === "staff"
+      ? orderedStaff(content.staff)
+      : [...(content[activeSection] || [])];
+    const scopedIds = scopedItems ? new Set(scopedItems.map((item) => item.id)) : null;
+    const movableIndexes = allItems.reduce((indexes, item, index) => {
+      const isDirector = activeSection === "staff"
+        && /direktur/i.test(`${item.category || ""} ${item.title || ""}`);
+      if (!isDirector && (!scopedIds || scopedIds.has(item.id))) indexes.push(index);
+      return indexes;
+    }, []);
+    const movableItems = movableIndexes.map((index) => allItems[index]);
+    const sourceIndex = movableItems.findIndex((item) => item.id === itemId);
+    const targetIndex = sourceIndex + offset;
+    if (sourceIndex < 0 || targetIndex < 0 || targetIndex >= movableItems.length) return;
+    [movableItems[sourceIndex], movableItems[targetIndex]] = [
+      movableItems[targetIndex],
+      movableItems[sourceIndex],
+    ];
+    const reorderedItems = [...allItems];
+    movableIndexes.forEach((index, orderIndex) => {
+      reorderedItems[index] = movableItems[orderIndex];
+    });
+    if (activeSection === "staff") {
+      reorderedItems.forEach((item, index) => {
+        item.display_order = index;
+      });
+    }
+    setContent((current) => ({ ...current, [activeSection]: reorderedItems }));
+    setOrderDirty(true);
   }
 
-  function moveStaffTo(staffId, targetIndex) {
-    const allStaff = orderedStaff(content.staff);
-    const directors = allStaff.filter((item) =>
-      /direktur/i.test(`${item.category || ""} ${item.title || ""}`)
-    );
-    const reordered = allStaff.filter((item) =>
-      !/direktur/i.test(`${item.category || ""} ${item.title || ""}`)
-    );
-    const sourceIndex = reordered.findIndex((item) => item.id === staffId);
-    if (sourceIndex < 0 || targetIndex < 0 || targetIndex >= reordered.length || sourceIndex === targetIndex) return;
-    const [dragged] = reordered.splice(sourceIndex, 1);
-    reordered.splice(targetIndex, 0, dragged);
-    const reorderedItems = [...directors, ...reordered]
-      .map((item, order) => ({ ...item, display_order: order }));
-    setContent((current) => ({ ...current, staff: reorderedItems }));
-    setStaffOrderDirty(true);
+  function moveContentItemTo(sourceId, targetId) {
+    if (savingOrder) return;
+    const allItems = activeSection === "staff"
+      ? orderedStaff(content.staff)
+      : [...(content[activeSection] || [])];
+    const directors = activeSection === "staff"
+      ? allItems.filter((item) => /direktur/i.test(`${item.category || ""} ${item.title || ""}`))
+      : [];
+    const movableItems = activeSection === "staff"
+      ? allItems.filter((item) => !/direktur/i.test(`${item.category || ""} ${item.title || ""}`))
+      : allItems;
+    const sourceIndex = movableItems.findIndex((item) => item.id === sourceId);
+    const targetIndex = movableItems.findIndex((item) => item.id === targetId);
+    if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) return;
+    const [draggedItem] = movableItems.splice(sourceIndex, 1);
+    movableItems.splice(targetIndex, 0, draggedItem);
+    const reorderedItems = activeSection === "staff"
+      ? [...directors, ...movableItems].map((item, index) => ({ ...item, display_order: index }))
+      : movableItems;
+    setContent((current) => ({ ...current, [activeSection]: reorderedItems }));
+    setOrderDirty(true);
   }
 
-  async function saveStaffOrder() {
-    if (!staffOrderDirty || savingStaffOrder) return;
-    setSavingStaffOrder(true);
+  async function saveContentOrder(section = activeSection) {
+    if (!orderDirty || savingOrder) return !orderDirty;
+    setSavingOrder(true);
     setMessage("");
     try {
-      const response = await fetch("/api/admin/staff/order", {
+      const items = section === "staff"
+        ? orderedStaff(content.staff)
+        : (content[section] || []);
+      const response = await fetch(`/api/admin/content/${section}/order`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: orderedStaff(content.staff).map((item) => item.id) }),
+        body: JSON.stringify({ ids: items.map((item) => item.id) }),
       });
-      if (response.status === 405) {
-        const reorderedItems = orderedStaff(content.staff);
-        const responses = await Promise.all(reorderedItems.map((item) =>
-          fetch(`/api/admin/content/staff/${item.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(item),
-          })
-        ));
-        const failedResponse = responses.find((itemResponse) => !itemResponse.ok);
-        if (failedResponse) {
-          const result = await failedResponse.json().catch(() => ({}));
-          throw new Error(result.error || "Urutan staf gagal disimpan.");
-        }
-        await loadContent();
-        setMessage("Urutan staf berhasil disimpan.");
-        return;
-      }
       const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error || "Urutan staf gagal disimpan.");
-      await loadContent();
-      setMessage("Urutan staf berhasil disimpan.");
+      if (!response.ok) throw new Error(result.error || "Urutan konten gagal disimpan.");
+      if (!(await loadContent())) return false;
+      setMessage(`Urutan ${contentLabels[section].toLowerCase()} berhasil disimpan.`);
+      return true;
     } catch (error) {
-      setMessage(error.message || "Urutan staf gagal disimpan.");
+      setMessage(error.message || "Urutan konten gagal disimpan.");
+      return false;
     } finally {
-      setSavingStaffOrder(false);
+      setSavingOrder(false);
     }
   }
 
+  async function changeSection(section) {
+    if (orderDirty && !(await saveContentOrder())) return;
+    setActiveSection(section);
+    setArchiveView("active");
+    setEditing(null);
+    setMessage("");
+    return true;
+  }
+
+  async function changeArchiveView(view) {
+    if (orderDirty && !(await saveContentOrder())) return;
+    setArchiveView(view);
+    setEditing(null);
+  }
+
   async function deleteItem(itemId) {
-    if (!window.confirm("Hapus konten ini?")) return;
+    if (!window.confirm("Hapus pengaturan kontak ini secara permanen?")) return;
+    if (orderDirty && !(await saveContentOrder())) return;
     const response = await fetch(`/api/admin/content/${activeSection}/${itemId}`, { method: "DELETE" });
-    if (!response.ok) return;
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setMessage(result.error || "Pengaturan kontak gagal dihapus.");
+      return;
+    }
     await loadContent();
-    setMessage("Konten berhasil dihapus.");
+    setMessage("Pengaturan kontak berhasil dihapus.");
   }
 
-  async function toggleGalleryVisibility(item) {
-    const hidden = item.hidden ? false : true;
-    const response = await fetch(`/api/admin/content/gallery/${item.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...item, hidden }),
-    });
-    if (!response.ok) return;
-    await loadContent();
-    setMessage(hidden ? "Foto berhasil disembunyikan." : "Foto kembali ditampilkan.");
+  async function archiveItem(itemId) {
+    if (orderDirty && !(await saveContentOrder())) return;
+    try {
+      const response = await fetch(`/api/admin/content/${activeSection}/${itemId}`, { method: "DELETE" });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Konten gagal diarsipkan.");
+      if (await loadContent()) setMessage("Konten berhasil dipindahkan ke arsip.");
+    } catch (error) {
+      setMessage(error.message || "Konten gagal diarsipkan.");
+    }
   }
 
-  async function restoreGalleryItem(itemId) {
-    const response = await fetch(`/api/admin/gallery/${itemId}/restore`, { method: "POST" });
-    if (!response.ok) return;
-    await loadContent();
-    setMessage("Foto berhasil dipulihkan.");
+  async function toggleItemVisibility(item) {
+    if (orderDirty && !(await saveContentOrder())) return;
+    const hidden = !item.hidden;
+    try {
+      const response = await fetch(`/api/admin/content/${activeSection}/${item.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...item, hidden }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Visibilitas konten gagal diperbarui.");
+      if (await loadContent()) {
+        setMessage(hidden ? "Konten berhasil disembunyikan." : "Konten kembali ditampilkan.");
+      }
+    } catch (error) {
+      setMessage(error.message || "Visibilitas konten gagal diperbarui.");
+    }
   }
 
-  async function permanentlyDeleteGalleryItem(itemId) {
-    if (!window.confirm("Hapus foto ini secara permanen? Tindakan ini tidak dapat dibatalkan.")) return;
-    const response = await fetch(`/api/admin/gallery/${itemId}/permanent`, { method: "DELETE" });
-    if (!response.ok) return;
-    await loadContent();
-    setMessage("Foto berhasil dihapus permanen.");
+  async function restoreArchivedItem(itemId) {
+    try {
+      const response = await fetch(`/api/admin/content/${activeSection}/${itemId}/restore`, { method: "POST" });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Konten gagal dipulihkan.");
+      if (await loadContent()) setMessage("Konten berhasil dipulihkan.");
+    } catch (error) {
+      setMessage(error.message || "Konten gagal dipulihkan.");
+    }
+  }
+
+  async function permanentlyDeleteArchivedItem(itemId) {
+    if (!window.confirm("Hapus konten ini secara permanen? Tindakan ini tidak dapat dibatalkan.")) return;
+    try {
+      const response = await fetch(`/api/admin/content/${activeSection}/${itemId}/permanent`, { method: "DELETE" });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Konten gagal dihapus permanen.");
+      if (await loadContent()) setMessage("Konten berhasil dihapus permanen.");
+    } catch (error) {
+      setMessage(error.message || "Konten gagal dihapus permanen.");
+    }
   }
 
   async function saveTheme(theme) {
@@ -1573,7 +1804,7 @@ function AdminDashboard() {
     const savedTheme = await response.json();
     setContent((current) => {
       const updatedContent = { ...current, theme: savedTheme };
-      writeLocalCache(PUBLIC_CONTENT_CACHE_KEY, updatedContent);
+      writePublicContentCache(updatedContent);
       return updatedContent;
     });
     setMessage("Tema warna berhasil disimpan.");
@@ -1588,34 +1819,80 @@ function AdminDashboard() {
   const regularItems = activeSection === "contacts"
     ? currentItems.filter((item) => !(item.category || "").toLowerCase().includes("whatsapp"))
     : currentItems;
-  const galleryTrashItems = content.gallery_trash || [];
+  const archivedItems = content.archives?.[activeSection] || [];
+  const supportsArchive = ARCHIVABLE_SECTIONS.has(activeSection);
+  const supportsVisibility = VISIBILITY_SECTIONS.has(activeSection);
 
   return (
     <main className="admin-dashboard">
-      <aside className="admin-sidebar">
+      <header className="admin-mobile-header">
+        <div className="admin-mobile-brand">
+          <img src="/static/images/logo.png" alt="" />
+          <span><strong>KURMA TRAVEL</strong><small>Admin Panel</small></span>
+        </div>
+        <button
+          ref={mobileMenuButtonRef}
+          className="admin-mobile-menu-button"
+          type="button"
+          aria-label={isNavigationOpen ? "Tutup navigasi admin" : "Buka navigasi admin"}
+          aria-controls="adminNavigationDrawer"
+          aria-expanded={isNavigationOpen}
+          onClick={() => setIsNavigationOpen((open) => !open)}
+        >
+          <span></span><span></span><span></span>
+        </button>
+      </header>
+
+      <aside
+        className={`admin-sidebar ${isNavigationOpen ? "is-open" : ""}`}
+        id="adminNavigationDrawer"
+        aria-label="Navigasi Admin Panel"
+      >
         <div className="admin-sidebar-brand">
           <img src="/static/images/logo.png" alt="Kurma Travel" />
           <strong>KURMA TRAVEL</strong>
+          <button
+            className="admin-drawer-close"
+            type="button"
+            aria-label="Tutup navigasi admin"
+            onClick={closeMobileNavigation}
+          >
+            ×
+          </button>
         </div>
-        <nav>
+        <nav aria-label="Bagian admin">
           {Object.entries(contentLabels).map(([section, label]) => (
             <button
+              type="button"
               key={section}
               className={activeSection === section ? "active" : ""}
-              onClick={() => { setActiveSection(section); setGalleryView("active"); setEditing(null); setMessage(""); }}
+              onClick={async () => {
+                if (await changeSection(section)) closeMobileNavigation();
+              }}
             >
               {label}
             </button>
           ))}
           <button
+            type="button"
             className={activeSection === "theme" ? "active" : ""}
-            onClick={() => { setActiveSection("theme"); setEditing(null); setMessage(""); }}
+            onClick={async () => {
+              if (await changeSection("theme")) closeMobileNavigation();
+            }}
           >
             Warna Situs
           </button>
         </nav>
-        <button className="admin-logout" onClick={logout}>Keluar</button>
+        <button className="admin-logout" type="button" onClick={logout}>Keluar</button>
       </aside>
+      <button
+        className={`admin-nav-backdrop ${isNavigationOpen ? "is-visible" : ""}`}
+        type="button"
+        aria-label="Tutup navigasi admin"
+        aria-hidden={!isNavigationOpen}
+        tabIndex={isNavigationOpen ? 0 : -1}
+        onClick={closeMobileNavigation}
+      />
 
       <section className="admin-content">
         <header className="admin-header">
@@ -1625,7 +1902,7 @@ function AdminDashboard() {
           </div>
           <div className="admin-header-actions">
             <a className="admin-view-button" href="/">Lihat Website</a>
-            {activeSection !== "theme" && !(activeSection === "gallery" && galleryView === "trash") && (
+            {activeSection !== "theme" && !(supportsArchive && archiveView === "archive") && (
               <button className="admin-primary-button" onClick={() => setEditing({})}>
                 {activeSection === "contacts" ? "Tambah Kontak Lain" : `Tambah ${contentLabels[activeSection]}`}
               </button>
@@ -1634,21 +1911,21 @@ function AdminDashboard() {
         </header>
         {message && <div className="admin-message">{message}</div>}
 
-        {activeSection === "gallery" && (
-          <div className="gallery-admin-toolbar">
+        {supportsArchive && (
+          <div className="admin-archive-toolbar">
             <button
               type="button"
-              className={galleryView === "active" ? "active" : ""}
-              onClick={() => { setGalleryView("active"); setEditing(null); }}
+              className={archiveView === "active" ? "active" : ""}
+              onClick={() => changeArchiveView("active")}
             >
-              Galeri Aktif
+              Data Aktif ({currentItems.length})
             </button>
             <button
               type="button"
-              className={galleryView === "trash" ? "active" : ""}
-              onClick={() => { setGalleryView("trash"); setEditing(null); }}
+              className={archiveView === "archive" ? "active" : ""}
+              onClick={() => changeArchiveView("archive")}
             >
-              Sampah ({galleryTrashItems.length})
+              Arsip ({archivedItems.length})
             </button>
           </div>
         )}
@@ -1670,37 +1947,51 @@ function AdminDashboard() {
           </div>
         )}
 
-        {activeSection === "staff" && (
-          <div className="admin-staff-order-toolbar">
-            <p className="admin-staff-order-hint">
-              Seret kartu staf untuk menyusun urutannya, atau gunakan tombol panah. Direktur tetap berada di bagian utama.
+        {activeSection !== "theme" && archiveView === "active" && (
+          <div className="admin-order-toolbar">
+            <p className="admin-order-hint">
+              {activeSection === "staff"
+                ? "Seret kartu staf atau gunakan tombol panah untuk mengatur urutan. Direktur tetap berada di bagian utama."
+                : activeSection === "contacts"
+                  ? "Gunakan tombol panah untuk mengatur urutan kontak yang tampil di website."
+                  : "Seret kartu atau gunakan tombol panah untuk mengatur urutan konten yang tampil di website."}
             </p>
-            {staffOrderDirty && (
+            {orderDirty && (
               <button
                 type="button"
                 className="admin-primary-button"
-                disabled={savingStaffOrder}
-                onClick={saveStaffOrder}
+                disabled={savingOrder}
+                onClick={() => saveContentOrder()}
               >
-                {savingStaffOrder ? "Menyimpan..." : "Simpan Urutan"}
+                {savingOrder ? "Menyimpan..." : "Simpan Urutan"}
               </button>
             )}
           </div>
         )}
 
-        {activeSection !== "theme" && galleryView === "trash" && activeSection === "gallery" && (
-          <div className="admin-list admin-list-gallery-trash">
-            {galleryTrashItems.length === 0 && <div className="admin-empty">Sampah galeri kosong.</div>}
-            {galleryTrashItems.map((item) => (
+        {supportsArchive && archiveView === "archive" && (
+          <div className={`admin-list admin-list-${activeSection} admin-list-archive`}>
+            {archivedItems.length === 0 && <div className="admin-empty">Arsip {contentLabels[activeSection].toLowerCase()} kosong.</div>}
+            {archivedItems.map((item) => (
               <article className="admin-list-item" key={item.id}>
                 {item.image && <img className="admin-list-image" src={item.image} alt="" />}
                 <div>
-                  <strong>{item.title || "Foto galeri"}</strong>
-                  <small>{item.deleted_at ? `Dipindahkan ${item.deleted_at.replace("T", " ")}` : "Ada di sampah"}</small>
+                  <strong>{item.title || "Tanpa judul"}</strong>
+                  {(item.category || item.description) && (
+                    <p>{item.category ? `${item.category} - ` : ""}{
+                      activeSection === "articles" || activeSection === "information"
+                        ? stripHtml(item.description).slice(0, 180)
+                        : item.description || ""
+                    }</p>
+                  )}
+                  <small>
+                    Diarsipkan {item.archived_at ? item.archived_at.replace("T", " ") : "—"}
+                    {item.archived_by ? ` oleh ${item.archived_by}` : ""}
+                  </small>
                 </div>
                 <div className="admin-item-actions">
-                  <button onClick={() => restoreGalleryItem(item.id)}>Pulihkan</button>
-                  <button className="danger" onClick={() => permanentlyDeleteGalleryItem(item.id)}>Hapus Permanen</button>
+                  <button type="button" onClick={() => restoreArchivedItem(item.id)}>Pulihkan</button>
+                  <button type="button" className="danger" onClick={() => permanentlyDeleteArchivedItem(item.id)}>Hapus Permanen</button>
                 </div>
               </article>
             ))}
@@ -1726,10 +2017,30 @@ function AdminDashboard() {
                 <tbody>
                   {whatsappItems.map((item) => (
                     <tr key={item.id}>
-                      <td>{item.title || "Nomor WhatsApp"}</td>
+                      <td>
+                        {item.title || "Nomor WhatsApp"}
+                        <br />
+                        {supportsVisibility && (
+                          <span className={`content-status ${item.hidden ? "hidden" : ""}`}>
+                            {item.hidden ? "Tersembunyi" : "Ditampilkan"}
+                          </span>
+                        )}
+                      </td>
                       <td><a href={item.url} target="_blank" rel="noopener noreferrer">{item.url || "Belum ada link"}</a></td>
                       <td>
                         <div className="admin-item-actions">
+                          <ContentOrderControls
+                            item={item}
+                            index={whatsappItems.findIndex((currentItem) => currentItem.id === item.id)}
+                            count={whatsappItems.length}
+                            onMove={(id, offset) => moveContentItem(id, offset, whatsappItems)}
+                            saving={savingOrder}
+                          />
+                          {supportsVisibility && (
+                            <button type="button" onClick={() => toggleItemVisibility(item)}>
+                              {item.hidden ? "Tampilkan" : "Sembunyikan"}
+                            </button>
+                          )}
                           <button type="button" onClick={() => setEditing(item)}>Edit</button>
                           <button type="button" className="danger" onClick={() => deleteItem(item.id)}>Hapus</button>
                         </div>
@@ -1742,40 +2053,49 @@ function AdminDashboard() {
           </section>
         )}
 
-        {activeSection !== "theme" && !(activeSection === "gallery" && galleryView === "trash") && <div className={`admin-list admin-list-${activeSection}`}>
+        {activeSection !== "theme" && !(supportsArchive && archiveView === "archive") && <div className={`admin-list admin-list-${activeSection}`}>
           {regularItems.length === 0 && !(activeSection === "contacts" && whatsappItems.length > 0) && <div className="admin-empty">Belum ada data.</div>}
           {regularItems.map((item) => {
             const isDirector = /direktur/i.test(`${item.category || ""} ${item.title || ""}`);
+            const supportsDragOrdering = activeSection !== "contacts";
             const staffMembers = currentItems.filter((staffMember) =>
               !/direktur/i.test(`${staffMember.category || ""} ${staffMember.title || ""}`)
             );
             const staffOrderIndex = activeSection === "staff" && !isDirector
               ? staffMembers.findIndex((staffMember) => staffMember.id === item.id)
               : -1;
+            const orderIndex = activeSection === "staff"
+              ? staffOrderIndex
+              : activeSection === "contacts"
+                ? regularItems.findIndex((currentItem) => currentItem.id === item.id)
+                : currentItems.findIndex((currentItem) => currentItem.id === item.id);
+            const orderCount = activeSection === "staff"
+              ? staffMembers.length
+              : activeSection === "contacts" ? regularItems.length : currentItems.length;
             return (
             <article
-              className={`admin-list-item ${activeSection === "staff" && !isDirector ? "admin-staff-sortable" : ""}`}
+              className={`admin-list-item ${supportsDragOrdering && !(activeSection === "staff" && isDirector) ? "admin-sortable" : ""}`}
               key={item.id}
-              draggable={activeSection === "staff" && !isDirector}
+              draggable={supportsDragOrdering && !(activeSection === "staff" && isDirector)}
               onDragStart={(event) => {
-                if (activeSection !== "staff" || isDirector) return;
+                if (!supportsDragOrdering || (activeSection === "staff" && isDirector)) return;
                 event.dataTransfer.effectAllowed = "move";
                 event.dataTransfer.setData("text/plain", item.id);
               }}
               onDragOver={(event) => {
-                if (activeSection === "staff" && !isDirector) event.preventDefault();
+                if (supportsDragOrdering && !(activeSection === "staff" && isDirector)) event.preventDefault();
               }}
               onDrop={(event) => {
-                if (activeSection !== "staff" || isDirector) return;
+                if (!supportsDragOrdering || (activeSection === "staff" && isDirector)) return;
                 event.preventDefault();
-                moveStaffTo(event.dataTransfer.getData("text/plain"), staffOrderIndex);
+                moveContentItemTo(event.dataTransfer.getData("text/plain"), item.id);
               }}
             >
               {item.image && <img className="admin-list-image" src={item.image} alt="" />}
               <div>
                 <strong>{item.title || "Tanpa judul"}</strong>
-                {activeSection === "gallery" && (
-                  <p><span className={`gallery-status ${item.hidden ? "hidden" : ""}`}>{item.hidden ? "Tersembunyi" : "Ditampilkan"}</span></p>
+                {supportsVisibility && (
+                  <p><span className={`content-status ${item.hidden ? "hidden" : ""}`}>{item.hidden ? "Tersembunyi" : "Ditampilkan"}</span></p>
                 )}
                 {(item.category || item.description) && (
                   <p>{item.category ? `${item.category} - ` : ""}{
@@ -1787,34 +2107,28 @@ function AdminDashboard() {
                 {item.url && <small>{item.url}</small>}
               </div>
               <div className="admin-item-actions">
-                {activeSection === "staff" && !isDirector && (
-                  <div className="admin-staff-order">
-                    <span>Urutan {staffOrderIndex + 1}</span>
-                    <button
-                      type="button"
-                      aria-label={`Naikkan ${item.title}`}
-                      disabled={savingStaffOrder || staffOrderIndex === 0}
-                      onClick={() => moveStaff(staffOrderIndex, -1)}
-                    >
-                      ↑
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`Turunkan ${item.title}`}
-                      disabled={savingStaffOrder || staffOrderIndex === staffMembers.length - 1}
-                      onClick={() => moveStaff(staffOrderIndex, 1)}
-                    >
-                      ↓
-                    </button>
-                  </div>
+                {!(activeSection === "staff" && isDirector) && (
+                  <ContentOrderControls
+                    item={item}
+                    index={orderIndex}
+                    count={orderCount}
+                    onMove={(id, offset) => moveContentItem(
+                      id,
+                      offset,
+                      activeSection === "contacts" ? regularItems : undefined,
+                    )}
+                    saving={savingOrder}
+                  />
                 )}
-                {activeSection === "gallery" && (
-                  <button onClick={() => toggleGalleryVisibility(item)}>
+                {supportsVisibility && (
+                  <button type="button" onClick={() => toggleItemVisibility(item)}>
                     {item.hidden ? "Tampilkan" : "Sembunyikan"}
                   </button>
                 )}
                 <button onClick={() => setEditing(item)}>Edit</button>
-                <button className="danger" onClick={() => deleteItem(item.id)}>Hapus</button>
+                {supportsArchive
+                  ? <button type="button" onClick={() => archiveItem(item.id)}>Arsipkan</button>
+                  : <button type="button" className="danger" onClick={() => deleteItem(item.id)}>Hapus</button>}
               </div>
             </article>
           ); })}
@@ -1872,6 +2186,30 @@ function orderedStaff(items) {
       return leftOrder - rightOrder || left.index - right.index;
     })
     .map(({ item }) => item);
+}
+
+function ContentOrderControls({ item, index, count, onMove, saving }) {
+  return (
+    <div className="admin-item-order">
+      <span>Urutan {index + 1}</span>
+      <button
+        type="button"
+        aria-label={`Naikkan ${item.title || "konten"}`}
+        disabled={saving || index <= 0}
+        onClick={() => onMove(item.id, -1)}
+      >
+        ↑
+      </button>
+      <button
+        type="button"
+        aria-label={`Turunkan ${item.title || "konten"}`}
+        disabled={saving || index >= count - 1}
+        onClick={() => onMove(item.id, 1)}
+      >
+        ↓
+      </button>
+    </div>
+  );
 }
 
 function escapeHtml(value) {

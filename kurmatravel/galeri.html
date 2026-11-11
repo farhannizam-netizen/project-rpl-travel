@@ -8,31 +8,13 @@
 
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="static/css/style.css">
+    <link rel="stylesheet" href="static/css/site-nav.css">
+    <link rel="stylesheet" href="static/css/site-theme.css">
+    <script src="static/js/site-nav.js" defer></script>
+    <script src="static/js/site-components.js" defer></script>
+    <script src="static/js/gallery.js" defer></script>
 
     <style>
-
-        /* GRID GALERI */
-        .gallery-grid {
-            columns: 4 220px;
-            column-gap: 16px;
-        }
-
-        .gallery-grid img {
-            display: block;
-            width: 100%;
-            height: auto;
-            object-fit: cover;
-            margin: 0 0 16px;
-            break-inside: avoid;
-            border-radius: 14px;
-            cursor: pointer;
-            transition: transform .3s ease, box-shadow .3s ease;
-        }
-
-        .gallery-grid img:hover {
-            transform: scale(1.03);
-            box-shadow: 0 8px 22px rgba(0, 0, 0, .15);
-        }
 
         /* LIGHTBOX */
         .lightbox {
@@ -79,230 +61,29 @@
         }
         .lightbox-prev { left: 24px; }
         .lightbox-next { right: 24px; }
-/* =========================================
-   WHATSAPP MODAL - SAMA DENGAN INDEX
-========================================= */
-
-        .wa-modal {
-            position: fixed;
-            inset: 0;
-            z-index: 99999;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            background: rgba(14, 29, 21, 0.67);
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-        }
-
-        .wa-modal.show {
-            display: flex;
-        }
-
-        .wa-box {
-            width: min(410px, 100%);
-            padding: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            border-radius: 20px;
-            background: var(--bg);
-            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.25);
-            animation: modalEnter 0.25s ease both;
-        }
-
-        .wa-box h3 {
-            margin-top: 0;
-            margin-bottom: 23px;
-            color: var(--green);
-            font-family: 'Playfair Display', serif;
-            font-size: 25px;
-            text-align: center;
-        }
-
-        .wa-box a {
-            display: block;
-            margin-bottom: 11px;
-            padding: 13px 16px;
-            border: 1px solid #dce9de;
-            border-radius: 9px;
-            background: #f2f8f2;
-            color: var(--green);
-            font-size: 13px;
-            font-weight: 700;
-            text-align: center;
-            text-decoration: none;
-            transition: background 0.2s, color 0.2s;
-        }
-
-        .wa-box a:hover {
-            border-color: #25a366;
-            background: #25a366;
-            color: var(--white);
-        }
-
-        .wa-box button {
-            width: 100%;
-            margin-top: 8px;
-            padding: 12px;
-            border: none;
-            border-radius: 9px;
-            background: #ecebe5;
-            color: #47534b;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .wa-box button:hover {
-            background: #deddd5;
-        }
-
-        /* ANIMASI MODAL */
-        @keyframes modalEnter {
-            from {
-                opacity: 0;
-                transform: translateY(12px) scale(0.97);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        /* =========================================
-          FLOATING WHATSAPP - SAMA DENGAN INDEX
-        ========================================= */
-
-        .wa-float {
-            position: fixed;
-            right: 25px;
-            bottom: 25px;
-            z-index: 2000;
-            width: 57px;
-            height: 57px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border: 3px solid rgba(255, 255, 255, 0.9);
-            border-radius: 50%;
-            background: #20b965;
-            box-shadow: 0 7px 25px rgba(32, 185, 101, 0.32);
-            cursor: pointer;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(15px) scale(0.9);
-            transition:
-                opacity 0.3s ease,
-                visibility 0.3s ease,
-                transform 0.3s ease,
-                background 0.25s ease;
-        }
-
-        .wa-float.show {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0) scale(1);
-        }
-
-        .wa-float:hover {
-            background: #159c51;
-            transform: translateY(-4px) scale(1.04);
-        }
-
-        .wa-float::before {
-            content: "Chat Kami";
-            position: absolute;
-            right: 68px;
-            padding: 7px 12px;
-            border-radius: 7px;
-            background: var(--green-dark);
-            color: var(--white);
-            font-size: 11px;
-            font-weight: 600;
-            white-space: nowrap;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateX(5px);
-            transition: 0.2s ease;
-        }
-
-        .wa-float:hover::before {
-            opacity: 1;
-            visibility: visible;
-            transform: translateX(0);
-        }
-
-        /* RESPONSIVE HP */
-        @media (max-width: 480px) {
-            .wa-box {
-                width: 100%;
-                max-width: 410px;
-                padding: 25px 20px;
-            }
-
-            .wa-box h3 {
-                font-size: 23px;
-            }
-
-            .wa-float {
-                right: 16px;
-                bottom: 16px;
-                width: 52px;
-                height: 52px;
-            }
-        }
     </style>
 </head>
 
 <body>
 
-    <!-- NAVBAR -->
-    <header class="navbar">
-        <div class="container nav-flex">
-
-            <div class="hamburger" id="hamburger">
-                <span>☰</span>
-                <span class="menu-text">MENU</span>
-            </div>
-
-            <div class="logo">
-                <img src="static/images/logo.png" alt="Logo Kurma Travel">
-                <span>KURMA TRAVEL</span>
-            </div>
-
-            <nav id="navMenu">
-                <a href="index.html">Home</a>
-                <a href="paket.html">Paket Umroh &amp; Haji</a>
-                <a href="galeri.html" class="active">Galeri</a>
-                <a href="staf.html">Staf</a>
-                <a href="kontak.html">Kontak</a>
-            </nav>
-
-            <a href="#" class="btn-wa"
-               onclick="openWA('Halo Kurma Travel, saya mau konsultasi paket umrah/haji yang tersedia'); return false;">
-                Chat WhatsApp
-            </a>
-
-        </div>
-    </header>
+    <div id="siteNavigation"></div>
 
     <!-- MODAL PILIH ADMIN WHATSAPP -->
-    <div id="waModal" class="wa-modal"
-         onclick="if (event.target === this) closeWA();">
+    <div id="waModal" class="wa-modal" aria-hidden="true">
 
         <div class="wa-box">
             <h3>Pilih Admin WhatsApp</h3>
 
-            <a id="wa1" href="#" target="_blank" rel="noopener noreferrer">
-                Chat WA 1
+            <a id="wa1" href="https://wa.me/6281280803429" target="_blank" rel="noopener noreferrer">
+                Chat Admin 1 · 0812-8080-3429
             </a>
 
-            <a id="wa2" href="#" target="_blank" rel="noopener noreferrer">
-                Chat WA 2
+            <a id="wa2" href="https://wa.me/6283875613645" target="_blank" rel="noopener noreferrer">
+                Chat Admin 2 · 0838-7561-3645
             </a>
 
-            <a id="wa3" href="#" target="_blank" rel="noopener noreferrer">
-                Chat WA 3
+            <a id="wa3" href="https://wa.me/6287776042572" target="_blank" rel="noopener noreferrer">
+                Chat Admin 3 · 0877-7604-2572
             </a>
 
             <button type="button" onclick="closeWA()">Tutup</button>
@@ -310,14 +91,14 @@
     </div>
 
     <!-- HEADER -->
-    <section class="hero"
-        style="background-image:url('static/images/hero.jpg'); height:40vh;">
+    <section class="hero kt-page-hero">
 
         <div class="overlay"></div>
 
         <div class="container hero-content">
-            <h1>Galeri Dokumentasi</h1>
-            <p>Dokumentasi perjalanan jamaah Kurma Travel</p>
+            <span class="kt-page-hero__badge">Dokumentasi Perjalanan</span>
+            <h1>Galeri Kurma Travel</h1>
+            <p>Dokumentasi perjalanan dan aktivitas jamaah bersama Kurma Travel.</p>
         </div>
     </section>
 
@@ -329,7 +110,7 @@
     </section>
 
     <!-- LIGHTBOX FOTO -->
-    <div id="lightbox" class="lightbox">
+    <div id="lightbox" class="lightbox" aria-hidden="true">
 
         <button type="button" class="lightbox-close"
                 aria-label="Tutup foto">
@@ -344,9 +125,7 @@
     </div>
 
     <!-- FOOTER -->
-    <footer>
-        © 2026 Kurma Travel
-    </footer>
+    <div id="siteFooter"></div>
 
 </body>
 </html>

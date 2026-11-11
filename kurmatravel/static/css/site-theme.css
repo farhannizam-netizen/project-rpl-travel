@@ -1,0 +1,454 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap");
+
+:root {
+    --kt-primary: #ff6900;
+    --kt-primary-dark: #d94a00;
+    --kt-primary-soft: #fff0e5;
+    --kt-cream: #fff8f0;
+    --kt-navy: #172033;
+    --kt-text: #26313c;
+    --kt-muted: #65717d;
+    --kt-border: #eee5dc;
+    --kt-shadow: 0 16px 42px rgba(23, 32, 51, 0.1);
+    --kt-radius: 20px;
+    --kt-font-body: "DM Sans", sans-serif;
+    --kt-font-display: "Playfair Display", serif;
+    --kt-hero-overlay: linear-gradient(
+        90deg,
+        rgba(130, 66, 16, 0.64) 0%,
+        rgba(127, 57, 17, 0.62) 25%,
+        rgba(127, 57, 17, 0.22) 58%,
+        rgba(23, 32, 51, 0.38) 100%
+    );
+    --kt-hero-glow: radial-gradient(
+        circle at 70% 20%,
+        rgba(255, 204, 153, 0.2),
+        transparent 35%
+    );
+}
+
+.kt-page-hero {
+    font-family: var(--kt-font-body);
+}
+
+.kt-page-hero::before {
+    background: var(--kt-hero-overlay);
+}
+
+.kt-page-hero .overlay {
+    background: var(--kt-hero-glow);
+}
+
+.kt-page-hero h1::after {
+    background: linear-gradient(90deg, var(--kt-primary), rgba(255, 105, 0, 0.25));
+}
+
+.hero.kt-page-hero:not(.kt-page-hero--home) {
+    height: auto;
+    min-height: 370px;
+    background-color: #70401f;
+    background-image: url("../images/hero.jpg");
+    background-position: center 54%;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
+.hero.kt-page-hero:not(.kt-page-hero--home) .hero-content {
+    width: min(1220px, 90%);
+    margin-inline: auto;
+    padding: 66px 0 72px;
+    color: #fff;
+    font-family: var(--kt-font-body);
+    animation: none;
+}
+
+.kt-page-hero__badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    margin-bottom: 5px;
+    padding: 8px 15px;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    backdrop-filter: blur(6px);
+}
+
+.hero.kt-page-hero:not(.kt-page-hero--home) h1 {
+    max-width: 760px;
+    margin: 15px 0 16px;
+    color: #fff;
+    font-family: var(--kt-font-display);
+    font-size: clamp(40px, 5vw, 72px);
+    font-weight: 700;
+    line-height: 1.04;
+    letter-spacing: -1.6px;
+    text-wrap: balance;
+}
+
+.hero.kt-page-hero:not(.kt-page-hero--home) h1::after {
+    width: 82px;
+    height: 4px;
+    margin-top: 21px;
+    border-radius: 999px;
+}
+
+.hero.kt-page-hero:not(.kt-page-hero--home) .hero-content > p {
+    max-width: 620px;
+    margin: 0;
+    color: rgba(255, 255, 255, 0.92);
+    font-size: clamp(15px, 1.4vw, 18px);
+    line-height: 1.65;
+}
+
+.kt-site-footer {
+    display: block;
+    padding: 0;
+    border-top: 1px solid #eadfd4;
+    background: var(--kt-cream);
+    color: var(--kt-text);
+    font-family: var(--kt-font-body);
+    text-align: left;
+}
+
+.kt-footer-main {
+    display: grid;
+    grid-template-columns: minmax(240px, 1.4fr) repeat(3, minmax(150px, 1fr));
+    gap: clamp(24px, 4vw, 58px);
+    width: min(1220px, calc(100% - 48px));
+    margin-inline: auto;
+    padding: 56px 0 42px;
+}
+
+.kt-footer-brand img {
+    display: block;
+    width: min(220px, 100%);
+    height: auto;
+    margin-bottom: 17px;
+    object-fit: contain;
+    object-position: left center;
+}
+
+.kt-footer-brand p {
+    max-width: 350px;
+    margin: 0;
+    color: var(--kt-muted);
+    font-size: 14px;
+    line-height: 1.75;
+}
+
+.kt-footer-column h2 {
+    margin: 3px 0 18px;
+    color: var(--kt-navy);
+    font-family: var(--kt-font-body);
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.kt-footer-column ul {
+    display: grid;
+    gap: 11px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.kt-footer-column li,
+.kt-footer-column a,
+.kt-footer-column address {
+    color: var(--kt-muted);
+    font-size: 13px;
+    font-style: normal;
+    line-height: 1.65;
+}
+
+.kt-footer-column a {
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.kt-footer-column a:hover,
+.kt-footer-column a:focus-visible {
+    color: var(--kt-primary-dark);
+}
+
+.kt-footer-socials {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+}
+
+.kt-footer-socials a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 7px 11px;
+    border: 1px solid #eadfd4;
+    border-radius: 999px;
+    background: #fffdf9;
+    color: var(--kt-navy);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.kt-footer-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    width: min(1220px, calc(100% - 48px));
+    margin-inline: auto;
+    padding: 18px 0 22px;
+    border-top: 1px solid #e8ddd2;
+    color: #737d86;
+    font-size: 12px;
+}
+
+.wa-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: max(16px, env(safe-area-inset-top)) 16px
+        max(16px, env(safe-area-inset-bottom));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: rgba(23, 32, 51, 0.62);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+.wa-modal.show {
+    display: flex;
+}
+
+.wa-box {
+    width: min(410px, 100%);
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+    padding: clamp(20px, 6vw, 30px);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 20px;
+    background: #fffdf9;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.25);
+    animation: kt-wa-modal-enter 0.25s ease both;
+}
+
+.wa-box h3 {
+    margin: 0 0 22px;
+    color: var(--kt-navy);
+    font-family: var(--kt-font-display);
+    font-size: clamp(22px, 6vw, 26px);
+    line-height: 1.2;
+    text-align: center;
+}
+
+.wa-box a {
+    display: block;
+    margin-bottom: 11px;
+    padding: 13px 16px;
+    border: 1px solid #dce9de;
+    border-radius: 10px;
+    background: #f2f8f2;
+    color: #244b3a;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.4;
+    text-align: center;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+    transition: background 0.2s, color 0.2s;
+}
+
+.wa-box a:hover,
+.wa-box a:focus-visible {
+    border-color: #25a366;
+    background: #25a366;
+    color: #fff;
+}
+
+.wa-box a:focus-visible,
+.wa-box button:focus-visible {
+    outline: 3px solid rgba(255, 105, 0, 0.4);
+    outline-offset: 3px;
+}
+
+.wa-box button {
+    width: 100%;
+    min-height: 48px;
+    margin-top: 8px;
+    padding: 12px;
+    border: 0;
+    border-radius: 10px;
+    background: #eee8df;
+    color: #33404a;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.wa-box button:hover {
+    background: #ded7ce;
+}
+
+@keyframes kt-wa-modal-enter {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.kt-whatsapp-float {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 850;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 58px;
+    height: 58px;
+    border: 3px solid rgba(255, 255, 255, 0.94);
+    border-radius: 50%;
+    background: #20b965;
+    box-shadow: 0 8px 24px rgba(32, 185, 101, 0.3);
+    color: #fff;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(14px) scale(0.94);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.kt-whatsapp-float.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+.kt-whatsapp-float:hover {
+    background: #159c51;
+    transform: translateY(-3px) scale(1.03);
+}
+
+.kt-whatsapp-float:focus-visible {
+    outline: 3px solid rgba(32, 185, 101, 0.45);
+    outline-offset: 4px;
+}
+
+.kt-whatsapp-float svg {
+    width: 28px;
+    height: 28px;
+    fill: currentColor;
+}
+
+body.kt-nav-open .kt-whatsapp-float {
+    z-index: 850;
+}
+
+@media (max-width: 900px) {
+    .kt-footer-main {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 30px 24px;
+        width: calc(100% - 40px);
+        padding: 42px 0 32px;
+    }
+
+    .kt-footer-brand {
+        grid-column: 1 / -1;
+    }
+
+    .kt-footer-brand img {
+        width: min(190px, 70%);
+    }
+
+    .kt-footer-bottom {
+        width: calc(100% - 40px);
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+}
+
+@media (max-width: 760px) {
+    .hero.kt-page-hero:not(.kt-page-hero--home) {
+        min-height: 310px;
+        background-position: 58% center;
+    }
+
+    .hero.kt-page-hero:not(.kt-page-hero--home) .hero-content {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 42px 22px 48px;
+    }
+
+    .hero.kt-page-hero:not(.kt-page-hero--home) h1 {
+        margin: 12px 0 13px;
+        font-size: clamp(32px, 8vw, 42px);
+        line-height: 1.08;
+        letter-spacing: -0.8px;
+    }
+
+    .hero.kt-page-hero:not(.kt-page-hero--home) h1::after {
+        margin-top: 17px;
+    }
+
+    .hero.kt-page-hero:not(.kt-page-hero--home) .hero-content > p {
+        font-size: 15px;
+        line-height: 1.6;
+    }
+
+    .kt-whatsapp-float {
+        right: 16px;
+        bottom: max(16px, env(safe-area-inset-bottom));
+        width: 54px;
+        height: 54px;
+    }
+}
+
+@media (max-width: 420px) {
+    .hero.kt-page-hero:not(.kt-page-hero--home) .hero-content {
+        padding: 36px 18px 42px;
+    }
+
+    .kt-footer-main,
+    .kt-footer-bottom {
+        width: calc(100% - 36px);
+    }
+}
+
+@media (max-width: 600px) {
+    .kt-footer-main {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 25px;
+    }
+
+    .kt-footer-brand {
+        grid-column: auto;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .kt-whatsapp-float,
+    .kt-footer-column a,
+    .wa-box {
+        transition-duration: 0.01ms;
+        animation-duration: 0.01ms;
+    }
+}

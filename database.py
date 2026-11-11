@@ -5,6 +5,7 @@ from pathlib import Path
 
 
 SECTIONS = {"packages", "gallery", "articles", "information", "staff", "contacts"}
+ARCHIVABLE_SECTIONS = {"packages", "gallery", "articles", "information", "staff"}
 
 
 def connect(db_file):
@@ -29,6 +30,7 @@ def initialize_database(db_file, json_file, default_content_factory):
             payload TEXT NOT NULL,
             hidden INTEGER NOT NULL DEFAULT 0,
             deleted_at TEXT,
+            archived_by TEXT,
             PRIMARY KEY (section, id)
         );
 
@@ -38,6 +40,11 @@ def initialize_database(db_file, json_file, default_content_factory):
         );
         """
     )
+    columns = {
+        row["name"] for row in connection.execute("PRAGMA table_info(content_items)")
+    }
+    if "archived_by" not in columns:
+        connection.execute("ALTER TABLE content_items ADD COLUMN archived_by TEXT")
     connection.commit()
 
     has_items = connection.execute("SELECT 1 FROM content_items LIMIT 1").fetchone()
@@ -78,8 +85,8 @@ def migrate_content(connection, content):
             connection.execute(
                 """
                 INSERT OR REPLACE INTO content_items
-                (section, id, position, payload, hidden, deleted_at)
-                VALUES ('gallery', ?, 0, ?, 0, ?)
+                (section, id, position, payload, hidden, deleted_at, archived_by)
+                VALUES ('gallery', ?, 0, ?, 0, ?, NULL)
                 """,
                 (
                     item["id"],
@@ -96,13 +103,17 @@ def migrate_content(connection, content):
     connection.commit()
 
 
-def load_content(db_file, default_theme):
+def load_content(db_file, default_theme, include_archived=False, include_hidden=False):
     connection = connect(db_file)
     content = {section: [] for section in SECTIONS}
+    visibility = {
+        section: {"active": 0, "visible": 0}
+        for section in SECTIONS
+    }
     for section in SECTIONS:
         rows = connection.execute(
             """
-            SELECT payload FROM content_items
+            SELECT payload, hidden FROM content_items
             WHERE section = ? AND deleted_at IS NULL
             ORDER BY position ASC
             """,
@@ -110,44 +121,94 @@ def load_content(db_file, default_theme):
         ).fetchall()
         for row in rows:
             try:
+                visibility[section]["active"] += 1
+                if not row["hidden"]:
+                    visibility[section]["visible"] += 1
+                if row["hidden"] and not include_hidden:
+                    continue
                 item = json.loads(row["payload"])
-                hidden_row = connection.execute(
-                    "SELECT hidden FROM content_items WHERE section = ? AND id = ?",
-                    (section, item.get("id")),
-                ).fetchone()
-                if hidden_row and hidden_row["hidden"] == 1:
+                item.pop("hidden", None)
+                if row["hidden"]:
                     item["hidden"] = True
                 content[section].append(item)
             except json.JSONDecodeError:
                 continue
 
-    trash_rows = connection.execute(
-        """
-        SELECT payload FROM content_items
-        WHERE section = 'gallery' AND deleted_at IS NOT NULL
-        ORDER BY deleted_at DESC
-        """
-    ).fetchall()
-    gallery_trash = []
-    for row in trash_rows:
-        try:
-            gallery_trash.append(json.loads(row["payload"]))
-        except json.JSONDecodeError:
-            continue
+    archives = {section: [] for section in ARCHIVABLE_SECTIONS}
+    if include_archived:
+        archived_rows = connection.execute(
+            """
+            SELECT section, payload, deleted_at, archived_by FROM content_items
+            WHERE deleted_at IS NOT NULL AND section IN (?, ?, ?, ?, ?)
+            ORDER BY deleted_at DESC
+            """,
+            tuple(sorted(ARCHIVABLE_SECTIONS)),
+        ).fetchall()
+        for row in archived_rows:
+            try:
+                item = json.loads(row["payload"])
+                item.pop("deleted_at", None)
+                item["archived_at"] = row["deleted_at"]
+                if row["archived_by"]:
+                    item["archived_by"] = row["archived_by"]
+                archives[row["section"]].append(item)
+            except json.JSONDecodeError:
+                continue
 
     theme_rows = connection.execute("SELECT key, value FROM site_theme").fetchall()
     theme = default_theme.copy()
     theme.update({row["key"]: row["value"] for row in theme_rows})
 
     connection.close()
-    content["gallery_trash"] = gallery_trash
     content["theme"] = theme
+    content["visibility"] = visibility
+    if include_archived:
+        content["archives"] = archives
     return dict(content)
 
 
 def replace_content(db_file, content, default_theme):
     connection = connect(db_file)
-    connection.execute("BEGIN")
+    connection.execute("BEGIN IMMEDIATE")
+    archives_by_key = {}
+    existing_archives = connection.execute(
+        """
+        SELECT section, id, payload, deleted_at, archived_by FROM content_items
+        WHERE deleted_at IS NOT NULL AND section IN (?, ?, ?, ?, ?)
+        """,
+        tuple(sorted(ARCHIVABLE_SECTIONS)),
+    ).fetchall()
+    for row in existing_archives:
+        try:
+            item = json.loads(row["payload"])
+        except json.JSONDecodeError:
+            continue
+        item.pop("deleted_at", None)
+        item.update({"id": row["id"], "archived_at": row["deleted_at"]})
+        if row["archived_by"]:
+            item["archived_by"] = row["archived_by"]
+        archives_by_key[(row["section"], row["id"])] = item
+    for section, items in (content.get("archives") or {}).items():
+        if section not in ARCHIVABLE_SECTIONS:
+            continue
+        for item in items:
+            if isinstance(item, dict) and item.get("id"):
+                archives_by_key[(section, item["id"])] = dict(item)
+    for item in content.get("gallery_trash", []):
+        if isinstance(item, dict) and item.get("id"):
+            archives_by_key[("gallery", item["id"])] = dict(item)
+
+    active_ids = {
+        (section, item.get("id"))
+        for section in SECTIONS
+        for item in content.get(section, [])
+        if isinstance(item, dict) and item.get("id")
+    }
+    archives = {section: [] for section in ARCHIVABLE_SECTIONS}
+    for (section, item_id), item in archives_by_key.items():
+        if (section, item_id) not in active_ids:
+            archives[section].append(item)
+
     connection.execute("DELETE FROM content_items")
     for section in SECTIONS:
         for position, item in enumerate(content.get(section, [])):
@@ -159,8 +220,8 @@ def replace_content(db_file, content, default_theme):
             connection.execute(
                 """
                 INSERT INTO content_items
-                (section, id, position, payload, hidden, deleted_at)
-                VALUES (?, ?, ?, ?, ?, NULL)
+                (section, id, position, payload, hidden, deleted_at, archived_by)
+                VALUES (?, ?, ?, ?, ?, NULL, NULL)
                 """,
                 (
                     section,
@@ -170,21 +231,30 @@ def replace_content(db_file, content, default_theme):
                     1 if item.get("hidden") else 0,
                 ),
             )
-    for item in content.get("gallery_trash", []):
-        if not isinstance(item, dict) or not item.get("id"):
-            continue
-        connection.execute(
-            """
-            INSERT INTO content_items
-            (section, id, position, payload, hidden, deleted_at)
-            VALUES ('gallery', ?, 0, ?, 0, ?)
-            """,
-            (
-                item["id"],
-                json.dumps(item, ensure_ascii=False),
-                item.get("deleted_at") or datetime.now().isoformat(timespec="seconds"),
-            ),
-        )
+    for section in ARCHIVABLE_SECTIONS:
+        for position, item in enumerate(archives[section]):
+            if not isinstance(item, dict) or not item.get("id"):
+                continue
+            stored_item = dict(item)
+            archived_at = stored_item.pop("archived_at", None)
+            archived_by = stored_item.pop("archived_by", None)
+            stored_item.pop("deleted_at", None)
+            connection.execute(
+                """
+                INSERT INTO content_items
+                (section, id, position, payload, hidden, deleted_at, archived_by)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    section,
+                    item["id"],
+                    position,
+                    json.dumps(stored_item, ensure_ascii=False),
+                    1 if stored_item.get("hidden") else 0,
+                    archived_at or datetime.now().isoformat(timespec="seconds"),
+                    archived_by,
+                ),
+            )
     connection.execute("DELETE FROM site_theme")
     theme = default_theme.copy()
     theme.update(content.get("theme") or {})
@@ -258,34 +328,47 @@ def update_item(db_file, section, item_id, item):
     return updated
 
 
-def update_staff_order(db_file, ordered_ids):
+def update_content_order(db_file, section, ordered_ids):
+    if section not in SECTIONS:
+        return False
     connection = connect(db_file)
     try:
         connection.execute("BEGIN IMMEDIATE")
         rows = connection.execute(
             """
             SELECT id, payload FROM content_items
-            WHERE section = 'staff' AND deleted_at IS NULL
+            WHERE section = ? AND deleted_at IS NULL
             """,
+            (section,),
         ).fetchall()
         items = {row["id"]: json.loads(row["payload"]) for row in rows}
-        if set(ordered_ids) != set(items):
+        if len(ordered_ids) != len(items) or set(ordered_ids) != set(items):
             connection.rollback()
             return False
         for display_order, item_id in enumerate(ordered_ids):
             item = items[item_id]
-            item["display_order"] = display_order
+            if section == "staff":
+                item["display_order"] = display_order
             connection.execute(
                 """
-                UPDATE content_items SET payload = ?
-                WHERE section = 'staff' AND id = ? AND deleted_at IS NULL
+                UPDATE content_items SET position = ?, payload = ?
+                WHERE section = ? AND id = ? AND deleted_at IS NULL
                 """,
-                (json.dumps(item, ensure_ascii=False), item_id),
+                (
+                    display_order,
+                    json.dumps(item, ensure_ascii=False),
+                    section,
+                    item_id,
+                ),
             )
         connection.commit()
         return True
     finally:
         connection.close()
+
+
+def update_staff_order(db_file, ordered_ids):
+    return update_content_order(db_file, "staff", ordered_ids)
 
 
 def delete_item(db_file, section, item_id):
@@ -319,40 +402,106 @@ def delete_item(db_file, section, item_id):
     return result, item
 
 
-def restore_gallery_item(db_file, item_id):
+def archive_item(db_file, section, item_id, archived_by=None):
+    if section not in ARCHIVABLE_SECTIONS:
+        return False
     connection = connect(db_file)
-    row = connection.execute(
-        "SELECT payload FROM content_items WHERE section = 'gallery' AND id = ? AND deleted_at IS NOT NULL",
-        (item_id,),
-    ).fetchone()
-    if not row:
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+        cursor = connection.execute(
+            """
+            UPDATE content_items
+            SET deleted_at = ?, archived_by = ?
+            WHERE section = ? AND id = ? AND deleted_at IS NULL
+            """,
+            (
+                datetime.now().isoformat(timespec="seconds"),
+                archived_by,
+                section,
+                item_id,
+            ),
+        )
+        connection.commit()
+        return cursor.rowcount > 0
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
         connection.close()
+
+
+def restore_item(db_file, section, item_id):
+    if section not in ARCHIVABLE_SECTIONS:
         return False, None
-    item = json.loads(row["payload"])
-    item.pop("deleted_at", None)
-    position_row = connection.execute(
-        "SELECT COALESCE(MIN(position) - 1, 0) FROM content_items WHERE section = 'gallery' AND deleted_at IS NULL"
-    ).fetchone()
-    connection.execute(
-        """
-        UPDATE content_items
-        SET position = ?, payload = ?, hidden = ?, deleted_at = NULL
-        WHERE section = 'gallery' AND id = ?
-        """,
-        (position_row[0], json.dumps(item, ensure_ascii=False), 1 if item.get("hidden") else 0, item_id),
-    )
-    connection.commit()
-    connection.close()
-    return True, item
+    connection = connect(db_file)
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+        row = connection.execute(
+            """
+            SELECT payload, hidden FROM content_items
+            WHERE section = ? AND id = ? AND deleted_at IS NOT NULL
+            """,
+            (section, item_id),
+        ).fetchone()
+        if not row:
+            connection.rollback()
+            return False, None
+        item = json.loads(row["payload"])
+        item.pop("deleted_at", None)
+        position_row = connection.execute(
+            """
+            SELECT COALESCE(MIN(position) - 1, 0) FROM content_items
+            WHERE section = ? AND deleted_at IS NULL
+            """,
+            (section,),
+        ).fetchone()
+        cursor = connection.execute(
+            """
+            UPDATE content_items
+            SET position = ?, payload = ?, hidden = ?, deleted_at = NULL, archived_by = NULL
+            WHERE section = ? AND id = ? AND deleted_at IS NOT NULL
+            """,
+            (
+                position_row[0],
+                json.dumps(item, ensure_ascii=False),
+                row["hidden"],
+                section,
+                item_id,
+            ),
+        )
+        if cursor.rowcount != 1:
+            connection.rollback()
+            return False, None
+        connection.commit()
+        return True, item
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
+def permanently_delete_item(db_file, section, item_id):
+    if section not in ARCHIVABLE_SECTIONS:
+        return False
+    connection = connect(db_file)
+    try:
+        cursor = connection.execute(
+            """
+            DELETE FROM content_items
+            WHERE section = ? AND id = ? AND deleted_at IS NOT NULL
+            """,
+            (section, item_id),
+        )
+        connection.commit()
+        return cursor.rowcount > 0
+    finally:
+        connection.close()
+
+
+def restore_gallery_item(db_file, item_id):
+    return restore_item(db_file, "gallery", item_id)
 
 
 def permanently_delete_gallery_item(db_file, item_id):
-    connection = connect(db_file)
-    cursor = connection.execute(
-        "DELETE FROM content_items WHERE section = 'gallery' AND id = ? AND deleted_at IS NOT NULL",
-        (item_id,),
-    )
-    connection.commit()
-    deleted = cursor.rowcount > 0
-    connection.close()
-    return deleted
+    return permanently_delete_item(db_file, "gallery", item_id)
