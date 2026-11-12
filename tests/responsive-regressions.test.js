@@ -5,7 +5,54 @@ import { describe, expect, it } from "vitest";
 const readProjectFile = (file) =>
   readFileSync(resolve(process.cwd(), file), "utf8");
 
-describe("responsive gallery and WhatsApp modal regressions", () => {
+describe("shared navigation and responsive regressions", () => {
+  it("uses the same page destinations and labels in the header and footer", () => {
+    const navigation = readProjectFile("kurmatravel/static/js/site-nav.js");
+    const components = readProjectFile("kurmatravel/static/js/site-components.js");
+    const sharedLinks = navigation.match(
+      /const links = \[([\s\S]*?)\];\s*window\.ktPrimaryPageLinks = links\.map/
+    );
+
+    expect(sharedLinks).not.toBeNull();
+    expect(sharedLinks[1]).toMatch(/\["\/index\.html", "Home"/);
+    expect(sharedLinks[1]).toMatch(/\["\/paket\.html", "Paket Umrah & Haji"/);
+    expect(sharedLinks[1]).toMatch(/\["\/galeri\.html", "Galeri"/);
+    expect(sharedLinks[1]).toMatch(/\["\/staf\.html", "Staf"/);
+    expect(sharedLinks[1]).toMatch(/\["\/kontak\.html", "Kontak"/);
+    expect(navigation).toMatch(/kt-primary-nav[\s\S]*?links\.map/);
+    expect(components).toMatch(/const pageLinks = window\.ktPrimaryPageLinks;/);
+
+    const app = readProjectFile("frontend/src/main.jsx");
+    const pageMap = app.match(/const pageMap = \{([\s\S]*?)\};/);
+
+    expect(pageMap).not.toBeNull();
+    expect(pageMap[1]).toMatch(/"\/index\.html": "index\.html"/);
+    expect(pageMap[1]).toMatch(/"\/paket\.html": "paket\.html"/);
+    expect(pageMap[1]).toMatch(/"\/galeri\.html": "galeri\.html"/);
+    expect(pageMap[1]).toMatch(/"\/staf\.html": "staf\.html"/);
+    expect(pageMap[1]).toMatch(/"\/kontak\.html": "kontak\.html"/);
+  });
+
+  it("lets footer links load their target HTML document like header navigation", () => {
+    const components = readProjectFile("kurmatravel/static/js/site-components.js");
+    const pages = ["index", "paket", "galeri", "staf", "kontak"];
+
+    expect(components).not.toMatch(/function handleInternalLink/);
+    expect(components).not.toMatch(/addEventListener\("click", handleInternalLink\)/);
+    pages.forEach((page) => {
+      const html = readProjectFile(`kurmatravel/${page}.html`);
+      expect(html).toMatch(/id="siteFooter"/);
+    });
+  });
+
+  it("resets scroll position when navigating between legacy application pages", () => {
+    const app = readProjectFile("frontend/src/main.jsx");
+
+    expect(app).toMatch(
+      /useEffect\(\(\) => \{\s*window\.scrollTo\(0, 0\);\s*\}, \[location\.pathname\]\);/
+    );
+  });
+
   it("uses document navigation for shared navbar links so React cannot unmount the navbar mid-route", () => {
     const script = readProjectFile("kurmatravel/static/js/site-nav.js");
     const navigationHandler = script.match(

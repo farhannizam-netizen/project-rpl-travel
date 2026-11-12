@@ -8,13 +8,7 @@
     const openingMessage =
         "Assalamu'alaikum, saya ingin mendapatkan informasi mengenai paket perjalanan Kurma Travel.";
     const encodedOpeningMessage = encodeURIComponent(openingMessage);
-    const pageLinks = [
-        ["index.html", "Home"],
-        ["paket.html", "Paket Umrah & Haji"],
-        ["galeri.html", "Galeri"],
-        ["staf.html", "Staf"],
-        ["kontak.html", "Kontak"]
-    ];
+    const pageLinks = window.ktPrimaryPageLinks;
     const socialLinks = [
         ["YouTube", "https://youtube.com/@kurmatravel?si=Sw9kC5tV5JWmj6k6"],
         ["Facebook", "https://www.facebook.com/share/1ZYG4z8kMq/"],
@@ -26,19 +20,13 @@
     const previousCloseWA = window.closeWA;
     let previousOverflow = "";
     let returnFocus = null;
-
-    function handleInternalLink(event) {
-        const anchor = event.currentTarget;
-        if (typeof window.ktLegacyNavigate !== "function") return;
-        const target = new URL(anchor.href, window.location.href);
-        if (target.origin !== window.location.origin) return;
-        event.preventDefault();
-        window.ktLegacyNavigate(target.pathname);
+    if (!Array.isArray(pageLinks)) {
+        console.error("Navigasi utama Kurma Travel belum dimuat.");
     }
 
     const footerPlaceholder = document.getElementById("siteFooter");
-    if (footerPlaceholder) {
-        const navigation = pageLinks.map(([href, label]) =>
+    if (footerPlaceholder && Array.isArray(pageLinks)) {
+        const navigation = pageLinks.map(({ href, label }) =>
             `<li><a href="${href}">${label}</a></li>`
         ).join("");
         const social = socialLinks.map(([label, href]) =>
@@ -79,10 +67,6 @@
         const footer = document.querySelector(".kt-site-footer");
         footer.querySelector(".kt-copyright-year").textContent =
             String(new Date().getFullYear());
-        footer.querySelectorAll("a[href]").forEach((link) => {
-            link.addEventListener("click", handleInternalLink);
-            cleanup.push(() => link.removeEventListener("click", handleInternalLink));
-        });
     }
 
     document.querySelectorAll(".wa-float").forEach((element) => element.remove());

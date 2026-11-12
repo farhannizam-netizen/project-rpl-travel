@@ -84,6 +84,10 @@ function LegacyPage() {
   const lastRefreshAtRef = useRef(0);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
+  useEffect(() => {
     let active = true;
     const pathName = location.pathname.replace(/\/+$/, "") || "/";
     const page = pageMap[pathName] || `${pathName.replace(/^\/+/, "") || "index"}.html`;
