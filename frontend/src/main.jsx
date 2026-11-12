@@ -434,7 +434,13 @@ function LegacyPage() {
       body.querySelectorAll("a[href], [onclick]").forEach((node) => {
         if (node.matches("a[href]")) {
           const href = node.getAttribute("href");
-          if (href && !href.startsWith("http") && !href.startsWith("#") && !href.startsWith("mailto:") && !href.startsWith("javascript:")) {
+          const isDocumentNavigation = node.hasAttribute("data-kt-document-navigation");
+          const isInternalLink = href &&
+            !href.startsWith("http") &&
+            !href.startsWith("#") &&
+            !href.startsWith("mailto:") &&
+            !href.startsWith("javascript:");
+          if (isInternalLink && !isDocumentNavigation) {
             const cleanHref = href.replace(/^\.\//, "");
             const route = cleanHref.endsWith(".html")
               ? "/" + cleanHref

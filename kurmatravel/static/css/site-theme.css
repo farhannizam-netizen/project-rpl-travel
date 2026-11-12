@@ -386,6 +386,17 @@ body.kt-nav-open .kt-whatsapp-float {
 }
 
 @media (max-width: 760px) {
+    .kt-footer-column[aria-label="Navigasi footer"] a {
+        display: flex;
+        align-items: center;
+        min-height: 44px;
+    }
+
+    .kt-whatsapp-float.footer-visible {
+        visibility: hidden;
+        pointer-events: none;
+    }
+
     .hero.kt-page-hero:not(.kt-page-hero--home) {
         min-height: 310px;
         background-position: 58% center;

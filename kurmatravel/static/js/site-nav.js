@@ -13,7 +13,7 @@
     }
 
     const links = [
-        ["/index.html", "Home", '<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>'],
+        ["/", "Home", '<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>'],
         ["/paket.html", "Paket Umrah & Haji", '<path d="M4 5h16v15H4z"/><path d="M8 3v4m8-4v4M7 11h10M7 15h6"/>'],
         ["/galeri.html", "Galeri", '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-5-5L5 20"/>'],
         ["/staf.html", "Staf", '<circle cx="9" cy="8" r="3"/><path d="M3 20v-1a6 6 0 0 1 12 0v1zm12-11a3 3 0 1 0 0-6m2 9a5 5 0 0 1 4 5v2"/>'],
@@ -36,10 +36,10 @@
                 <button class="kt-nav-toggle" id="ktNavToggle" type="button" aria-label="Buka menu navigasi" aria-controls="ktNavDrawer" aria-expanded="false">
                     <span></span><span></span><span></span>
                 </button>
-                <a class="kt-brand kt-brand--desktop" href="/index.html" aria-label="Beranda Kurma Travel">
+                <a class="kt-brand kt-brand--desktop" href="/" aria-label="Beranda Kurma Travel">
                     <img src="static/images/web_logo.png" alt="Kurma Travel">
                 </a>
-                <a class="kt-brand kt-brand--mobile" href="/index.html" aria-label="Beranda Kurma Travel">
+                <a class="kt-brand kt-brand--mobile" href="/" aria-label="Beranda Kurma Travel">
                     <img src="static/images/web_logo.png" alt="Kurma Travel">
                 </a>
                 <nav class="kt-primary-nav" aria-label="Menu utama">
@@ -54,7 +54,7 @@
         <button class="kt-nav-backdrop" id="ktNavBackdrop" type="button" aria-label="Tutup menu" aria-hidden="true" tabindex="-1"></button>
         <aside class="kt-nav-drawer" id="ktNavDrawer" aria-label="Navigasi seluler" aria-hidden="true" inert>
             <div class="kt-drawer-header">
-                <a class="kt-drawer-brand" href="/index.html">
+                <a class="kt-drawer-brand" href="/">
                     <img src="static/images/logo.png" alt="">
                     <span>KURMA TRAVEL<small>Berhidmat untuk umat</small></span>
                 </a>

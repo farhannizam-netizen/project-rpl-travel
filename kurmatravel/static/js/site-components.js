@@ -103,6 +103,15 @@
     updateFloatingLink();
     cleanup.push(() => window.removeEventListener("scroll", updateFloatingLink));
 
+    const footer = document.querySelector(".kt-site-footer");
+    if (footer && "IntersectionObserver" in window) {
+        const footerObserver = new IntersectionObserver(([entry]) => {
+            floatingLink.classList.toggle("footer-visible", entry.isIntersecting);
+        });
+        footerObserver.observe(footer);
+        cleanup.push(() => footerObserver.disconnect());
+    }
+
     function openWA(message) {
         const modal = document.getElementById("waModal");
         if (!modal) {

@@ -14,7 +14,7 @@ describe("shared navigation and responsive regressions", () => {
     );
 
     expect(sharedLinks).not.toBeNull();
-    expect(sharedLinks[1]).toMatch(/\["\/index\.html", "Home"/);
+    expect(sharedLinks[1]).toMatch(/\["\/", "Home"/);
     expect(sharedLinks[1]).toMatch(/\["\/paket\.html", "Paket Umrah & Haji"/);
     expect(sharedLinks[1]).toMatch(/\["\/galeri\.html", "Galeri"/);
     expect(sharedLinks[1]).toMatch(/\["\/staf\.html", "Staf"/);
@@ -26,6 +26,7 @@ describe("shared navigation and responsive regressions", () => {
     const pageMap = app.match(/const pageMap = \{([\s\S]*?)\};/);
 
     expect(pageMap).not.toBeNull();
+    expect(pageMap[1]).toMatch(/"\/": "index\.html"/);
     expect(pageMap[1]).toMatch(/"\/index\.html": "index\.html"/);
     expect(pageMap[1]).toMatch(/"\/paket\.html": "paket\.html"/);
     expect(pageMap[1]).toMatch(/"\/galeri\.html": "galeri\.html"/);
@@ -43,6 +44,45 @@ describe("shared navigation and responsive regressions", () => {
       const html = readProjectFile(`kurmatravel/${page}.html`);
       expect(html).toMatch(/id="siteFooter"/);
     });
+  });
+
+  it("uses the same document routes as shared navigation for mobile home calls to action", () => {
+    const home = readProjectFile("kurmatravel/index.html");
+    const articles = readProjectFile("kurmatravel/artikel.html");
+    const app = readProjectFile("frontend/src/main.jsx");
+
+    expect(home).toMatch(
+      /<a href="\/paket\.html" class="btn-primary btn-with-icon" data-kt-document-navigation>/
+    );
+    expect(home).toMatch(
+      /<a href="\/artikel\.html" class="btn-secondary btn-with-icon" data-kt-document-navigation>/
+    );
+    expect(home).toMatch(/<a href="\/paket\.html" data-kt-document-navigation>Lihat Semua Paket Umrah/);
+    expect(articles).toMatch(
+      /<a href="\/" data-kt-document-navigation>⬅ Kembali ke Home<\/a>/
+    );
+    expect(readProjectFile("kurmatravel/static/js/site-nav.js")).toMatch(
+      /<a class="kt-brand kt-brand--mobile" href="\/" aria-label="Beranda Kurma Travel">/
+    );
+    expect(app).toMatch(
+      /const isDocumentNavigation = node\.hasAttribute\("data-kt-document-navigation"\);[\s\S]*?if \(isInternalLink && !isDocumentNavigation\)/
+    );
+  });
+
+  it("keeps mobile footer navigation rows easy to tap and out from under the floating button", () => {
+    const css = readProjectFile("kurmatravel/static/css/site-theme.css");
+    const components = readProjectFile("kurmatravel/static/js/site-components.js");
+
+    expect(css).toMatch(
+      /@media \(max-width: 760px\)[\s\S]*?\.kt-footer-column\[aria-label="Navigasi footer"\] a\s*\{[^}]*display:\s*flex;[^}]*min-height:\s*44px/s
+    );
+    expect(css).toMatch(
+      /\.kt-whatsapp-float\.footer-visible\s*\{[^}]*visibility:\s*hidden;[^}]*pointer-events:\s*none;/s
+    );
+    expect(components).toMatch(
+      /new IntersectionObserver\(\(\[entry\]\) => \{\s*floatingLink\.classList\.toggle\("footer-visible", entry\.isIntersecting\);/
+    );
+    expect(components).toMatch(/footerObserver\.disconnect\(\)/);
   });
 
   it("resets scroll position when navigating between legacy application pages", () => {
