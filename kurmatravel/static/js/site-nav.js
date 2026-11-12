@@ -13,10 +13,11 @@
     }
 
     const links = [
-        ["/", "Home", '<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>'],
-        ["/paket.html", "Paket Umrah & Haji", '<path d="M4 5h16v15H4z"/><path d="M8 3v4m8-4v4M7 11h10M7 15h6"/>'],
+        ["/", "Beranda", '<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>'],
+        ["/paket.html", "Paket Umrah", '<path d="M4 5h16v15H4z"/><path d="M8 3v4m8-4v4M7 11h10M7 15h6"/>'],
         ["/galeri.html", "Galeri", '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-5-5L5 20"/>'],
         ["/staf.html", "Staf", '<circle cx="9" cy="8" r="3"/><path d="M3 20v-1a6 6 0 0 1 12 0v1zm12-11a3 3 0 1 0 0-6m2 9a5 5 0 0 1 4 5v2"/>'],
+        ["/pembayaran.html", "Pembayaran", '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18m-14 5h4"/>'],
         ["/kontak.html", "Kontak", '<path d="M4 5h16v14H4z"/><path d="m4 7 8 6 8-6"/>']
     ];
     window.ktPrimaryPageLinks = links.map(([href, label]) => ({ href, label }));

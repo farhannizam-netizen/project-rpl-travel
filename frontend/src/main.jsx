@@ -49,6 +49,8 @@ const pageMap = {
   "/index.html": "index.html",
   "/paket": "paket.html",
   "/paket.html": "paket.html",
+  "/pembayaran": "pembayaran.html",
+  "/pembayaran.html": "pembayaran.html",
   "/galeri": "galeri.html",
   "/galeri.html": "galeri.html",
   "/staf": "staf.html",

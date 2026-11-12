@@ -16,6 +16,72 @@
         ["TikTok", "https://www.tiktok.com/@kurmatravelpusat"]
     ];
     const cleanup = [];
+    const paymentToast = document.getElementById("paymentToast");
+    if (paymentToast) {
+        let toastTimer;
+        const showPaymentToast = (message) => {
+            paymentToast.textContent = message;
+            paymentToast.classList.add("is-visible");
+            window.clearTimeout(toastTimer);
+            toastTimer = window.setTimeout(() => {
+                paymentToast.classList.remove("is-visible");
+            }, 2600);
+        };
+        const copyAccount = async (event) => {
+            const text = event.currentTarget.dataset.copy;
+            let copied = false;
+            if (navigator.clipboard && window.isSecureContext) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    copied = true;
+                } catch (error) {
+                    console.warn("Clipboard API gagal; mencoba metode salin alternatif.", error);
+                }
+            }
+
+            if (!copied) {
+                const temporaryInput = document.createElement("textarea");
+                temporaryInput.value = text;
+                temporaryInput.setAttribute("readonly", "");
+                temporaryInput.style.position = "fixed";
+                temporaryInput.style.opacity = "0";
+                document.body.appendChild(temporaryInput);
+                temporaryInput.select();
+                copied = document.execCommand("copy");
+                temporaryInput.remove();
+            }
+
+            if (!copied) throw new Error("Clipboard copy command was rejected.");
+            showPaymentToast("Nomor rekening berhasil disalin.");
+        };
+        document.querySelectorAll(".payment-page .copy-account").forEach((button) => {
+            const clickHandler = () => {
+                copyAccount({ currentTarget: button }).catch((error) => {
+                    console.error("Nomor rekening gagal disalin.", error);
+                    showPaymentToast("Gagal menyalin. Silakan salin nomor rekening secara manual.");
+                });
+            };
+            button.addEventListener("click", clickHandler);
+            cleanup.push(() => button.removeEventListener("click", clickHandler));
+        });
+
+        const paymentWhatsappButton = document.querySelector("[data-payment-whatsapp]");
+        if (paymentWhatsappButton) {
+            const clickHandler = () => {
+                if (typeof window.openWA !== "function") {
+                    console.error("Fungsi WhatsApp Kurma Travel belum tersedia.");
+                    return;
+                }
+                window.openWA(
+                    "Halo Kurma Travel, saya ingin mengonfirmasi pembayaran. Saya akan mengirimkan bukti transfer melalui WhatsApp ini."
+                );
+            };
+            paymentWhatsappButton.addEventListener("click", clickHandler);
+            cleanup.push(() => paymentWhatsappButton.removeEventListener("click", clickHandler));
+        }
+
+        cleanup.push(() => window.clearTimeout(toastTimer));
+    }
     const previousOpenWA = window.openWA;
     const previousCloseWA = window.closeWA;
     let previousOverflow = "";

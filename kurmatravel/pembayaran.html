@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#fff8f0">
+    <title>Cara Pembayaran - Kurma Travel</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="stylesheet" href="static/css/style.css">
+    <link rel="stylesheet" href="static/css/site-nav.css">
+    <link rel="stylesheet" href="static/css/site-theme.css">
+    <script src="static/js/site-nav.js" defer></script>
+    <script src="static/js/site-components.js" defer></script>
+    <style>
+        .payment-page {
+            --payment-ink: #172033;
+            --payment-muted: #65717d;
+            --payment-line: #eee5dc;
+            --payment-orange: #ed6b23;
+            color: var(--payment-ink);
+            font-family: var(--kt-font-body, "DM Sans", sans-serif);
+        }
+
+        .payment-hero .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .payment-breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 0 17px;
+            color: rgba(255, 255, 255, .86);
+            font-size: 13px;
+        }
+
+        .payment-breadcrumb a {
+            color: #fff;
+            text-decoration-color: rgba(255, 255, 255, .55);
+            text-underline-offset: 4px;
+        }
+
+        .payment-section {
+            padding: clamp(56px, 8vw, 94px) 0;
+            background:
+                radial-gradient(ellipse at 12% 4%, rgba(255, 238, 220, .72), transparent 34%),
+                #fffdf9;
+        }
+
+        .payment-container {
+            width: min(1120px, calc(100% - 44px));
+            margin: 0 auto;
+        }
+
+        .payment-heading {
+            max-width: 720px;
+            margin: 0 auto 38px;
+            text-align: center;
+        }
+
+        .payment-eyebrow {
+            display: inline-block;
+            margin-bottom: 12px;
+            color: var(--payment-orange);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .14em;
+        }
+
+        .payment-heading h2 {
+            margin: 0 0 12px;
+            color: var(--payment-ink);
+            font-family: var(--kt-font-display, "Playfair Display", serif);
+            font-size: clamp(30px, 4vw, 44px);
+            line-height: 1.15;
+        }
+
+        .payment-heading p {
+            margin: 0;
+            color: var(--payment-muted);
+            font-size: 16px;
+            line-height: 1.75;
+        }
+
+        .payment-company {
+            display: inline-block;
+            margin-top: 8px;
+            color: var(--payment-ink);
+            font-weight: 800;
+        }
+
+        .bank-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 20px;
+            align-items: stretch;
+        }
+
+        .bank-card {
+            position: relative;
+            display: flex;
+            min-width: 0;
+            flex-direction: column;
+            padding: 27px;
+            overflow: hidden;
+            border: 1px solid var(--payment-line);
+            border-radius: 22px;
+            background: rgba(255, 255, 255, .94);
+            box-shadow: 0 14px 38px rgba(23, 32, 51, .07);
+            transition: transform .24s ease, box-shadow .24s ease, border-color .24s ease;
+        }
+
+        .bank-card:hover {
+            transform: translateY(-5px);
+            border-color: #f0c6a8;
+            box-shadow: 0 22px 48px rgba(23, 32, 51, .12);
+        }
+
+        .bank-card::after {
+            position: absolute;
+            right: -30px;
+            bottom: -50px;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: rgba(255, 240, 229, .65);
+            content: "";
+            pointer-events: none;
+        }
+
+        .bank-brand {
+            display: flex;
+            min-height: 65px;
+            align-items: center;
+            gap: 13px;
+            margin-bottom: 23px;
+        }
+
+        .bank-logo {
+            display: block;
+            width: 112px;
+            height: 60px;
+            flex: 0 0 112px;
+            border-radius: 8px;
+            object-fit: contain;
+        }
+
+        .bank-name {
+            margin: 0;
+            color: var(--payment-ink);
+            font-size: 19px;
+            font-weight: 800;
+            line-height: 1.25;
+        }
+
+        .bank-type {
+            display: block;
+            margin-top: 4px;
+            color: var(--payment-muted);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .11em;
+        }
+
+        .account-owner {
+            margin-bottom: 19px;
+        }
+
+        .account-label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--payment-muted);
+            font-size: 12px;
+        }
+
+        .account-owner strong {
+            color: var(--payment-ink);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .account-list {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 22px;
+        }
+
+        .account-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 13px;
+            border: 1px solid #f0ece7;
+            border-radius: 12px;
+            background: #fffdfa;
+        }
+
+        .account-currency {
+            color: var(--payment-muted);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .1em;
+        }
+
+        .account-number {
+            color: var(--payment-ink);
+            font-size: clamp(14px, 1.3vw, 16px);
+            font-variant-numeric: tabular-nums;
+            font-weight: 800;
+            letter-spacing: .035em;
+            white-space: nowrap;
+        }
+
+        .copy-account {
+            position: relative;
+            z-index: 1;
+            display: inline-flex;
+            width: 100%;
+            min-height: 47px;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            margin-top: auto;
+            padding: 11px 15px;
+            border: 1px solid #f1d2bd;
+            border-radius: 12px;
+            background: #fff7f1;
+            color: #a74b16;
+            font: inherit;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: background .2s ease, color .2s ease, border-color .2s ease;
+        }
+
+        .copy-account:hover,
+        .copy-account:focus-visible {
+            border-color: var(--payment-orange);
+            background: var(--payment-orange);
+            color: #fff;
+        }
+
+        .copy-account:focus-visible,
+        .payment-whatsapp:focus-visible {
+            outline: 3px solid rgba(237, 107, 35, .3);
+            outline-offset: 3px;
+        }
+
+        .copy-account svg {
+            width: 17px;
+            height: 17px;
+            fill: none;
+            stroke: currentColor;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-width: 1.8;
+        }
+
+        .payment-warning {
+            display: grid;
+            grid-template-columns: 48px 1fr;
+            gap: 16px;
+            align-items: start;
+            margin-top: 28px;
+            padding: 22px 25px;
+            border: 1px solid #f2d7a6;
+            border-radius: 18px;
+            background: linear-gradient(110deg, #fff8e9, #fffdf8);
+        }
+
+        .warning-icon {
+            display: grid;
+            width: 46px;
+            height: 46px;
+            place-items: center;
+            border-radius: 14px;
+            background: #ffedc5;
+            color: #9c6710;
+            font-size: 23px;
+            font-weight: 900;
+        }
+
+        .payment-warning h3 {
+            margin: 1px 0 5px;
+            color: #6d4810;
+            font-size: 17px;
+        }
+
+        .payment-warning p {
+            margin: 0;
+            color: #745e39;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .steps-section {
+            padding: 0 0 clamp(62px, 8vw, 98px);
+            background: #fffdf9;
+        }
+
+        .steps-heading {
+            margin-bottom: 27px;
+            text-align: center;
+        }
+
+        .steps-heading h2 {
+            margin: 0;
+            color: var(--payment-ink);
+            font-family: var(--kt-font-display, "Playfair Display", serif);
+            font-size: clamp(29px, 4vw, 40px);
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .step-card {
+            min-width: 0;
+            padding: 22px 20px;
+            border: 1px solid var(--payment-line);
+            border-radius: 17px;
+            background: #fff;
+        }
+
+        .step-number {
+            display: inline-grid;
+            width: 36px;
+            height: 36px;
+            place-items: center;
+            margin-bottom: 15px;
+            border-radius: 12px;
+            background: #fff0e5;
+            color: #ba5319;
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+        .step-card h3 {
+            margin: 0 0 8px;
+            color: var(--payment-ink);
+            font-size: 16px;
+        }
+
+        .step-card p {
+            margin: 0;
+            color: var(--payment-muted);
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .payment-whatsapp {
+            display: inline-flex;
+            min-height: 40px;
+            align-items: center;
+            justify-content: center;
+            margin-top: 13px;
+            padding: 9px 13px;
+            border: 0;
+            border-radius: 10px;
+            background: #eaf7ed;
+            color: #187640;
+            font: inherit;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .payment-toast {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            z-index: 1300;
+            max-width: min(360px, calc(100vw - 32px));
+            padding: 13px 17px;
+            border: 1px solid rgba(255, 255, 255, .18);
+            border-radius: 13px;
+            background: #172033;
+            box-shadow: 0 12px 32px rgba(23, 32, 51, .2);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(10px);
+            transition: opacity .2s ease, transform .2s ease;
+        }
+
+        .payment-toast.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 900px) {
+            .bank-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .steps-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 600px) {
+            .payment-container {
+                width: min(100% - 36px, 440px);
+            }
+
+            .payment-section {
+                padding-top: 52px;
+            }
+
+            .bank-grid,
+            .steps-grid {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            .bank-card {
+                padding: 23px;
+            }
+
+            .payment-warning {
+                grid-template-columns: 40px 1fr;
+                gap: 12px;
+                padding: 18px;
+            }
+
+            .warning-icon {
+                width: 40px;
+                height: 40px;
+            }
+
+            .payment-toast {
+                right: 16px;
+                bottom: 82px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .bank-card,
+            .copy-account,
+            .payment-toast {
+                transition-duration: .01ms;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="siteNavigation"></div>
+
+    <main class="payment-page">
+        <section class="hero kt-page-hero payment-hero">
+            <div class="overlay"></div>
+            <div class="container hero-content">
+                <nav class="payment-breadcrumb" aria-label="Breadcrumb">
+                    <a href="/">Beranda</a>
+                    <span aria-hidden="true">/</span>
+                    <span aria-current="page">Cara Pembayaran</span>
+                </nav>
+                <span class="kt-page-hero__badge">Informasi Pembayaran</span>
+                <h1>Cara Pembayaran</h1>
+                <p>Informasi rekening resmi pembayaran perjalanan Umrah dan Haji PT Karya Amanah Duta Insani (Kurma Travel).</p>
+            </div>
+        </section>
+
+        <section class="payment-section" aria-labelledby="accounts-title">
+            <div class="payment-container">
+                <header class="payment-heading">
+                    <span class="payment-eyebrow">AMAN, RESMI, TERPERCAYA</span>
+                    <h2 id="accounts-title">Informasi Rekening Pembayaran</h2>
+                    <p>Pembayaran resmi hanya melalui rekening atas nama:<br>
+                        <strong class="payment-company">PT Karya Amanah Duta Insani</strong>
+                    </p>
+                </header>
+
+                <div class="bank-grid">
+                    <article class="bank-card" data-bank="muamalat">
+                        <div class="bank-brand">
+                            <img class="bank-logo" src="static/images/bank/muamalat.png" alt="Logo Bank Muamalat">
+                            <div>
+                                <h3 class="bank-name">Bank Muamalat</h3>
+                                <span class="bank-type">BANK SYARIAH</span>
+                            </div>
+                        </div>
+                        <div class="account-owner">
+                            <span class="account-label">Nama pemilik rekening</span>
+                            <strong>PT Karya Amanah Duta Insani</strong>
+                        </div>
+                        <div class="account-list">
+                            <div class="account-row"><span class="account-currency">IDR</span><strong class="account-number">336 001 4012</strong></div>
+                            <div class="account-row"><span class="account-currency">USD</span><strong class="account-number">336 001 4013</strong></div>
+                        </div>
+                        <button class="copy-account" type="button" aria-label="Salin nomor rekening Bank Muamalat" data-copy="Bank Muamalat&#10;PT Karya Amanah Duta Insani&#10;IDR: 336 001 4012&#10;USD: 336 001 4013">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>
+                            Salin Nomor Rekening
+                        </button>
+                    </article>
+
+                    <article class="bank-card" data-bank="bsi">
+                        <div class="bank-brand">
+                            <img class="bank-logo" src="static/images/bank/bsi.png" alt="Logo Bank Syariah Indonesia">
+                            <div>
+                                <h3 class="bank-name">Bank Syariah Indonesia</h3>
+                                <span class="bank-type">BSI · BANK SYARIAH</span>
+                            </div>
+                        </div>
+                        <div class="account-owner">
+                            <span class="account-label">Nama pemilik rekening</span>
+                            <strong>PT Karya Amanah Duta Insani</strong>
+                        </div>
+                        <div class="account-list">
+                            <div class="account-row"><span class="account-currency">IDR</span><strong class="account-number">7751 019 698</strong></div>
+                            <div class="account-row"><span class="account-currency">USD</span><strong class="account-number">7212 198 514</strong></div>
+                        </div>
+                        <button class="copy-account" type="button" aria-label="Salin nomor rekening BSI" data-copy="Bank Syariah Indonesia (BSI)&#10;PT Karya Amanah Duta Insani&#10;IDR: 7751 019 698&#10;USD: 7212 198 514">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>
+                            Salin Nomor Rekening
+                        </button>
+                    </article>
+
+                    <article class="bank-card" data-bank="mandiri">
+                        <div class="bank-brand">
+                            <img class="bank-logo" src="static/images/bank/mandiri.png" alt="Logo Bank Mandiri">
+                            <div>
+                                <h3 class="bank-name">Bank Mandiri</h3>
+                                <span class="bank-type">BANK MANDIRI</span>
+                            </div>
+                        </div>
+                        <div class="account-owner">
+                            <span class="account-label">Nama pemilik rekening</span>
+                            <strong>PT Karya Amanah Duta Insani</strong>
+                        </div>
+                        <div class="account-list">
+                            <div class="account-row"><span class="account-currency">IDR</span><strong class="account-number">176 006 960 1969</strong></div>
+                        </div>
+                        <button class="copy-account" type="button" aria-label="Salin nomor rekening Bank Mandiri" data-copy="Bank Mandiri&#10;PT Karya Amanah Duta Insani&#10;IDR: 176 006 960 1969">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>
+                            Salin Nomor Rekening
+                        </button>
+                    </article>
+                </div>
+
+                <aside class="payment-warning" aria-labelledby="warning-title">
+                    <span class="warning-icon" aria-hidden="true">!</span>
+                    <div>
+                        <h3 id="warning-title">Perhatian!</h3>
+                        <p>Pastikan seluruh pembayaran hanya dilakukan melalui rekening resmi atas nama PT Karya Amanah Duta Insani. Kami tidak bertanggung jawab atas transaksi ke rekening selain rekening resmi perusahaan.</p>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <section class="steps-section" aria-labelledby="steps-title">
+            <div class="payment-container">
+                <header class="steps-heading">
+                    <span class="payment-eyebrow">LANGKAH MUDAH</span>
+                    <h2 id="steps-title">Alur Pembayaran</h2>
+                </header>
+                <div class="steps-grid">
+                    <article class="step-card">
+                        <span class="step-number">01</span>
+                        <h3>Pilih & TanyakanPaket</h3>
+                        <p>Tentukan & tanyakan ketersediaan paket Umrah/Haji yang Anda inginkan.</p>
+                    </article>
+                    <article class="step-card">
+                        <span class="step-number">02</span>
+                        <h3>Lakukan Pembayaran</h3>
+                        <p>Transfer ke salah satu rekening resmi di atas.</p>
+                    </article>
+                    <article class="step-card">
+                        <span class="step-number">03</span>
+                        <h3>Konfirmasi Pembayaran</h3>
+                        <p>Kirim bukti transfer melalui WhatsApp admin kami.</p>
+                        <button class="payment-whatsapp" type="button" data-payment-whatsapp>Konfirmasi via WhatsApp</button>
+                    </article>
+                    <article class="step-card">
+                        <span class="step-number">04</span>
+                        <h3>Verifikasi</h3>
+                        <p>Tim Kurma Travel akan memverifikasi dan mengonfirmasi pembayaran Anda.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="siteFooter"></div>
+
+    <div id="waModal" class="wa-modal" aria-hidden="true">
+        <div class="wa-box">
+            <h3>Pilih Admin WhatsApp</h3>
+            <a id="wa1" href="https://wa.me/6281280803429" target="_blank" rel="noopener noreferrer">Chat Admin 1 · 0812-8080-3429</a>
+            <a id="wa2" href="https://wa.me/6283875613645" target="_blank" rel="noopener noreferrer">Chat Admin 2 · 0838-7561-3645</a>
+            <a id="wa3" href="https://wa.me/6287776042572" target="_blank" rel="noopener noreferrer">Chat Admin 3 · 0877-7604-2572</a>
+            <button type="button" onclick="closeWA()">Tutup</button>
+        </div>
+    </div>
+
+    <div class="payment-toast" id="paymentToast" role="status" aria-live="polite"></div>
+
+</body>
+</html>
