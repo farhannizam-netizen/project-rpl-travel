@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "vite --config frontend/vite.config.js",
-    "build": "vite build --config frontend/vite.config.js",
+    "build": "vite build --config frontend/vite.config.js && node scripts/copy-static-assets.js",
     "preview": "vite preview --config frontend/vite.config.js",
     "test": "vitest run"
   },
