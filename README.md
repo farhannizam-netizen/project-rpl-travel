@@ -286,6 +286,8 @@ python app.py
 Netlify menyajikan React, sedangkan Flask API dan file legacy dijalankan di Render. Netlify
 meneruskan `/api/*`, `/static/*`, dan `/favicon.png` ke backend Render agar login, CRUD, foto,
 serta halaman informasi tetap berfungsi. Supabase tetap menjadi penyimpanan konten dan upload.
+Build Netlify juga menyertakan aset statis dan halaman HTML legacy untuk ditampilkan sebagai
+fallback saat backend tidak tersedia.
 
 1. Deploy repository ini di Render sebagai Blueprint menggunakan `render.yaml`. Service akan
    bernama `kurma-travel-api`. Jika mempertahankan service aktif dengan URL berbeda, jangan membuat

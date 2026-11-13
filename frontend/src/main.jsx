@@ -141,6 +141,36 @@ function LegacyPage() {
         if (!active) return;
         if (cachedPage?.html && reason.code !== "PAGE_NOT_FOUND") return;
         try {
+          if (Object.values(pageMap).includes(page)) {
+            let localPage = null;
+            try {
+              const localPageResponse = await fetch(`/legacy-pages/${encodeURIComponent(page)}`);
+              if (localPageResponse.ok) {
+                const localDocument = new DOMParser().parseFromString(
+                  await localPageResponse.text(),
+                  "text/html",
+                );
+                localPage = {
+                  html: localDocument.body.innerHTML,
+                  styles: Array.from(localDocument.querySelectorAll("style")).map(
+                    (style) => style.textContent,
+                  ),
+                  title: localDocument.title,
+                };
+              }
+            } catch (fallbackError) {
+              console.error(`Bundled page fallback failed for ${page}`, fallbackError);
+            }
+            if (localPage) {
+              writeLocalCache(pageCacheKey, localPage);
+              if (!active) return;
+              setPageStyles(localPage.styles);
+              if (localPage.title) window.document.title = localPage.title;
+              setHtml(localPage.html);
+              return;
+            }
+          }
+
           const currentRoute = location.pathname.replace(/\/+$/, "").replace(/\.html$/, "");
           const contentResponse = await fetch("/api/content", { cache: "no-store" });
           if (!contentResponse.ok) throw reason;

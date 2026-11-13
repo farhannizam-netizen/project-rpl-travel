@@ -93,6 +93,16 @@ describe("shared navigation and responsive regressions", () => {
     );
   });
 
+  it("bundles legacy pages and uses them when the page API is unavailable", () => {
+    const app = readProjectFile("frontend/src/main.jsx");
+    const assetCopyScript = readProjectFile("scripts/copy-static-assets.js");
+
+    expect(assetCopyScript).toMatch(/path\.join\(outputDirectory, "legacy-pages"\)/);
+    expect(assetCopyScript).toMatch(/entry\.name\.endsWith\("\.html"\)/);
+    expect(app).toMatch(/Object\.values\(pageMap\)\.includes\(page\)/);
+    expect(app).toMatch(/fetch\(`\/legacy-pages\/\$\{encodeURIComponent\(page\)\}`\)/);
+  });
+
   it("uses document navigation for shared navbar links so React cannot unmount the navbar mid-route", () => {
     const script = readProjectFile("kurmatravel/static/js/site-nav.js");
     const navigationHandler = script.match(
